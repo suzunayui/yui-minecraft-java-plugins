@@ -1,0 +1,17 @@
+name: RecycleGacha
+version: '${version}'
+main: com.suzunayui.recyclegacha.RecycleGacha
+api-version: '1.21'
+author: Yui
+description: Recycle items to get rare rewards
+
+commands:
+  recyclegacha:
+    description: RecycleGacha main command
+    usage: /<command>
+    aliases: [rg]
+
+permissions:
+  recyclegacha.admin:
+    description: Allows using RecycleGacha admin commands
+    default: op

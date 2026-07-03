@@ -1,0 +1,118 @@
+# RecycleGacha Configuration
+
+# ポイント設定
+# ポイント0: 量産可能なアイテム（丸石、石、土、原木、板材、鉄インゴット、エメラルドなど）
+points:
+  # ポイント0（量産可能）
+  COBBLESTONE: 0
+  STONE: 0
+  DIRT: 0
+  OAK_LOG: 0
+  SPRUCE_LOG: 0
+  BIRCH_LOG: 0
+  JUNGLE_LOG: 0
+  ACACIA_LOG: 0
+  DARK_OAK_LOG: 0
+  OAK_PLANKS: 0
+  SPRUCE_PLANKS: 0
+  BIRCH_PLANKS: 0
+  JUNGLE_PLANKS: 0
+  ACACIA_PLANKS: 0
+  DARK_OAK_PLANKS: 0
+  IRON_INGOT: 0
+  EMERALD: 0
+  
+  # ポイント1（一般的なアイテム）
+  COAL: 1
+  REDSTONE: 1
+  LAPIS_LAZULI: 1
+  QUARTZ: 1
+  GOLD_INGOT: 1
+  
+  # ポイント5（レアアイテム）
+  DIAMOND: 5
+  GOLDEN_APPLE: 5
+  EXPERIENCE_BOTTLE: 5
+
+# 抽選に必要なポイント
+required-points: 100
+
+# 抽選結果（レアリティ別）
+rewards:
+  # 大当たり（0.1～1%）
+  JACKPOT:
+    EMERALD_BLOCK:
+      amount: 1
+      chance: 0.5
+    DIAMOND:
+      amount: 2
+      chance: 0.3
+    ENCHANTED_BOOK:
+      amount: 1
+      chance: 0.2
+  
+  # 当たり（1～5%）
+  RARE:
+    EMERALD:
+      amount: 2
+      chance: 2.0
+    DIAMOND:
+      amount: 1
+      chance: 1.5
+    GOLD_INGOT:
+      amount: 2
+      chance: 1.0
+    IRON_INGOT:
+      amount: 2
+      chance: 0.5
+    FIREWORK_ROCKET:
+      amount: 2
+      chance: 0.3
+    GOLDEN_APPLE:
+      amount: 1
+      chance: 0.2
+  
+  # 普通（10～30%）
+  COMMON:
+    BREAD:
+      amount: 1
+      chance: 15.0
+    COOKED_BEEF:
+      amount: 1
+      chance: 10.0
+    COOKED_CHICKEN:
+      amount: 1
+      chance: 10.0
+    ARROW:
+      amount: 1
+      chance: 8.0
+    TORCH:
+      amount: 1
+      chance: 5.0
+    EXPERIENCE_BOTTLE:
+      amount: 1
+      chance: 3.0
+    ENDER_PEARL:
+      amount: 1
+      chance: 2.0
+  
+  # ハズレだけど使える
+  USELESS:
+    BONE_MEAL:
+      amount: 1
+      chance: 20.0
+    STRING:
+      amount: 1
+      chance: 15.0
+    LEATHER:
+      amount: 1
+      chance: 15.0
+    COAL:
+      amount: 1
+      chance: 15.0
+    REDSTONE:
+      amount: 1
+      chance: 15.0
+    LAPIS_LAZULI:
+      amount: 1
+      chance: 10.0
