@@ -1,0 +1,17 @@
+name: UltimateLibrarian
+version: '${version}'
+main: com.suzunayui.ultimatelibrarian.UltimateLibrarian
+api-version: '1.21'
+author: Yui
+description: Ultimate librarian NPC shop plugin
+
+commands:
+  ultimatelibrarian:
+    description: Spawn librarian NPCs
+    usage: /<command> <tool|weapon|armor|ranged|remove>
+    aliases: [ul]
+
+permissions:
+  ultimatelibrarian.use:
+    description: Allows using UltimateLibrarian command
+    default: op

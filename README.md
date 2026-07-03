@@ -12,6 +12,7 @@ Minecraft Java Edition 用のプラグインをまとめたリポジトリです
 | [PositionHUD](./PositionHUD) | 画面に座標を表示するプラグイン |
 | [QualityofLifeRecipes](./QualityofLifeRecipes) | 生活の質を向上させるクラフトレシピを追加するプラグイン |
 | [SimpleBackup](./SimpleBackup) | サーバーの自動バックアッププラグイン |
+| [UltimateLibrarian](./UltimateLibrarian) | 交易所NPCプラグイン |
 
 ## 対応環境
 
