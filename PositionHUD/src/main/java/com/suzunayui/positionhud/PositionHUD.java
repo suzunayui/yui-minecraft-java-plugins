@@ -22,7 +22,9 @@ public class PositionHUD extends JavaPlugin {
         instance = this;
         
         if (getCommand("positionhud") != null) {
-            getCommand("positionhud").setExecutor(new PositionHudCommand(this));
+            PositionHudCommand executor = new PositionHudCommand(this);
+            getCommand("positionhud").setExecutor(executor);
+            getCommand("positionhud").setTabCompleter(executor);
         }
         
         for (Player player : Bukkit.getOnlinePlayers()) {
