@@ -1,0 +1,6 @@
+name: LogDestroyer
+version: '${version}'
+main: com.suzunayui.logdestroyer.LogDestroyer
+api-version: '1.21'
+author: Yui
+description: Tree felling plugin with wooden axe

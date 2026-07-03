@@ -36,6 +36,12 @@ for /f "delims=" %%f in ('dir /b SimpleBackup\build\libs\SimpleBackup-*.jar 2^>n
     echo   %%f
 )
 
+echo Copying LogDestroyer...
+for /f "delims=" %%f in ('dir /b LogDestroyer\build\libs\LogDestroyer-*.jar 2^>nul') do (
+    copy /Y "LogDestroyer\build\libs\%%f" "minecraft\plugins\" >nul
+    echo   %%f
+)
+
 echo.
 echo Done!
 pause
