@@ -1,0 +1,17 @@
+name: CompactFarms
+version: '${version}'
+main: com.suzunayui.compactfarms.CompactFarms
+api-version: '1.21'
+author: Yui
+description: Automatic resource generation in containers
+
+commands:
+  compactfarms:
+    description: CompactFarms main command
+    usage: /<command>
+    permission: compactfarms.admin
+
+permissions:
+  compactfarms.admin:
+    description: Allows using CompactFarms admin commands
+    default: op

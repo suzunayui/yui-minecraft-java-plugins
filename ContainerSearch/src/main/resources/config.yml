@@ -1,0 +1,8 @@
+# ContainerSearch Configuration
+
+# 検索範囲
+search:
+  range-x: 10
+  range-z: 10
+  range-y-min: -1
+  range-y-max: 5

@@ -1,0 +1,6 @@
+name: QualityofLifeRecipes
+version: '${version}'
+main: com.suzunayui.qolrecipes.QualityofLifeRecipes
+api-version: '1.21'
+author: Yui
+description: Quality of life crafting recipes

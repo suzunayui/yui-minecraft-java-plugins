@@ -1,0 +1,17 @@
+name: ContainerSearch
+version: '${version}'
+main: com.suzunayui.containersearch.ContainerSearch
+api-version: '1.21'
+author: Yui
+description: Search items in nearby containers
+
+commands:
+  containersearch:
+    description: Search for items in nearby containers
+    usage: /<command> <item>
+    aliases: [cs]
+
+permissions:
+  containersearch.use:
+    description: Allows using ContainerSearch command
+    default: true

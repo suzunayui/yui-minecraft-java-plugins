@@ -1,0 +1,19 @@
+# CompactFarms Configuration
+# CompactFarmsの種類: WHITE_SHULKER_BOX (鉄), GREEN_SHULKER_BOX (エメラルド)
+
+# 生成される資源
+resources:
+  IRON_INGOT:
+    amount: 1
+    interval-seconds: 60
+  EMERALD:
+    amount: 1
+    interval-seconds: 60
+  GUNPOWDER:
+    amount: 1
+    interval-seconds: 60
+
+# グローバル設定
+global:
+  max-per-type: 1
+  save-interval-minutes: 5

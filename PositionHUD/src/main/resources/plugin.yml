@@ -1,0 +1,17 @@
+name: PositionHUD
+version: '${version}'
+main: com.suzunayui.positionhud.PositionHUD
+api-version: '1.21'
+author: Yui
+description: Display coordinates on screen like Bedrock Edition
+
+commands:
+  positionhud:
+    description: Toggle position HUD display
+    usage: /<command>
+    aliases: [poshud]
+
+permissions:
+  positionhud.use:
+    description: Allows using PositionHUD command
+    default: true

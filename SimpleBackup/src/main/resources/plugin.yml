@@ -1,0 +1,17 @@
+name: SimpleBackup
+version: '${version}'
+main: com.suzunayui.simplebackup.SimpleBackup
+api-version: '1.21'
+author: Yui
+description: Simple backup plugin
+
+commands:
+  backup:
+    description: Create a backup manually
+    usage: /<command>
+    permission: simplebackup.admin
+
+permissions:
+  simplebackup.admin:
+    description: Allows using backup command
+    default: op
