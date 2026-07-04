@@ -17,12 +17,10 @@ import java.util.*;
 
 public class LibrarianManager {
     
-    private final UltimateLibrarian plugin;
     private final List<UUID> spawnedNPCs = new ArrayList<>();
     private final NamespacedKey npcTypeKey;
     
     public LibrarianManager(UltimateLibrarian plugin) {
-        this.plugin = plugin;
         this.npcTypeKey = new NamespacedKey(plugin, "npc_type");
     }
     

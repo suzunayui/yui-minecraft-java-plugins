@@ -3,6 +3,7 @@
 build/
 
 # IDE
+bin/
 .idea/
 *.iml
 .vscode/
@@ -16,6 +17,7 @@ Thumbs.db
 
 # Server
 minecraft/
+plugins/
 
 # Logs
 *.log

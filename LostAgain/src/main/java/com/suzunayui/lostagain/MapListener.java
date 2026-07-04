@@ -10,7 +10,10 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.MapMeta;
+import org.bukkit.map.MapRenderer;
 import org.bukkit.map.MapView;
+
+import java.util.ArrayList;
 
 public class MapListener implements Listener {
 
@@ -51,6 +54,12 @@ public class MapListener implements Listener {
 
         mapView.setCenterX(player.getLocation().getBlockX());
         mapView.setCenterZ(player.getLocation().getBlockZ());
+
+        for (MapRenderer renderer : new ArrayList<>(mapView.getRenderers())) {
+            mapView.removeRenderer(renderer);
+        }
+        mapView.addRenderer(new LostAgainMapRenderer(player.getUniqueId()));
+
         player.sendMap(mapView);
 
         player.sendActionBar(Component.text("\u5730\u56f3\u3092\u66f4\u65b0\u3057\u307e\u3057\u305f")

@@ -34,7 +34,8 @@ public class LostAgainCommand implements CommandExecutor {
         MapView mapView = Bukkit.createMap(player.getWorld());
         mapView.setCenterX(player.getLocation().getBlockX());
         mapView.setCenterZ(player.getLocation().getBlockZ());
-        mapView.setScale(MapView.Scale.FAR);
+        mapView.setScale(MapView.Scale.FARTHEST);
+        mapView.setUnlimitedTracking(true);
 
         ItemStack mapItem = new ItemStack(Material.FILLED_MAP);
         MapMeta mapMeta = (MapMeta) mapItem.getItemMeta();
