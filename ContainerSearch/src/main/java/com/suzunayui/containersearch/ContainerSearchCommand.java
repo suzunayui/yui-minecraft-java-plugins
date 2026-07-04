@@ -14,11 +14,9 @@ import java.util.stream.Collectors;
 
 public class ContainerSearchCommand implements CommandExecutor, TabCompleter {
     
-    private final ContainerSearch plugin;
     private final ContainerScanner scanner;
     
     public ContainerSearchCommand(ContainerSearch plugin) {
-        this.plugin = plugin;
         this.scanner = new ContainerScanner(plugin);
     }
     

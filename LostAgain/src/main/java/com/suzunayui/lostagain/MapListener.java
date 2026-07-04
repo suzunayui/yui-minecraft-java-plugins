@@ -18,11 +18,6 @@ import java.util.ArrayList;
 public class MapListener implements Listener {
 
     private static final String MAP_NAME = "\u8ff7\u5b50\u5bfe\u7b56\u306e\u5730\u56f3";
-    private final LostAgain plugin;
-
-    public MapListener(LostAgain plugin) {
-        this.plugin = plugin;
-    }
 
     @EventHandler
     public void onPlayerInteract(PlayerInteractEvent event) {

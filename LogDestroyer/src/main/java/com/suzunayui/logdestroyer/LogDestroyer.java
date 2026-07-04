@@ -10,7 +10,7 @@ public class LogDestroyer extends JavaPlugin {
     public void onEnable() {
         instance = this;
         
-        getServer().getPluginManager().registerEvents(new LogDestroyListener(this), this);
+        getServer().getPluginManager().registerEvents(new LogDestroyListener(), this);
         
         getLogger().info("LogDestroyer has been enabled!");
     }

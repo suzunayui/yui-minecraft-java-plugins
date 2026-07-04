@@ -15,7 +15,7 @@ public class LostAgain extends JavaPlugin {
             getCommand("lostagain").setExecutor(executor);
         }
 
-        getServer().getPluginManager().registerEvents(new MapListener(this), this);
+        getServer().getPluginManager().registerEvents(new MapListener(), this);
 
         getLogger().info("LostAgain has been enabled!");
     }

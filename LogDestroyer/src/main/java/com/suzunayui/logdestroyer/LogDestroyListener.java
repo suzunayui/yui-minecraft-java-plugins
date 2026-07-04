@@ -14,11 +14,9 @@ import java.util.*;
 
 public class LogDestroyListener implements Listener {
     
-    private final LogDestroyer plugin;
     private static final int MAX_BLOCKS = 64;
     
-    public LogDestroyListener(LogDestroyer plugin) {
-        this.plugin = plugin;
+    public LogDestroyListener() {
     }
     
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
