@@ -110,11 +110,19 @@ public class PositionHUD extends JavaPlugin implements Listener {
         int y = player.getLocation().getBlockY();
         int z = player.getLocation().getBlockZ();
         String direction = getDirection(player.getLocation().getYaw());
-        
-        Component message = Component.text("X: " + x + "  Y: " + y + "  Z: " + z + "  [" + direction + "]")
+        String time = getMinecraftTime(player);
+
+        Component message = Component.text("X: " + x + "  Y: " + y + "  Z: " + z + "  [" + direction + "]  " + time)
             .color(NamedTextColor.WHITE);
-        
+
         player.sendActionBar(message);
+    }
+
+    private String getMinecraftTime(Player player) {
+        long time = player.getWorld().getTime();
+        int hours = (int) ((time / 1000 + 6) % 24);
+        int minutes = (int) ((time % 1000) * 60 / 1000);
+        return String.format("%02d:%02d", hours, minutes);
     }
     
     private String getDirection(float yaw) {

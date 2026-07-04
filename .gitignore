@@ -18,6 +18,7 @@ Thumbs.db
 # Server
 minecraft/
 plugins/
+Broadcaster/
 
 # Logs
 *.log

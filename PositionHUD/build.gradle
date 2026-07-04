@@ -9,6 +9,8 @@ java {
     toolchain.languageVersion = JavaLanguageVersion.of(25)
 }
 
+compileJava.options.encoding = 'UTF-8'
+
 repositories {
     mavenCentral()
     maven { url 'https://repo.papermc.io/repository/maven-public/' }
