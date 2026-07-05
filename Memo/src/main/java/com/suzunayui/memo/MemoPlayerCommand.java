@@ -1,0 +1,41 @@
+package com.suzunayui.memo;
+
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
+
+import java.util.List;
+
+public class MemoPlayerCommand implements CommandExecutor {
+
+    private final Memo plugin;
+
+    public MemoPlayerCommand(Memo plugin) {
+        this.plugin = plugin;
+    }
+
+    @Override
+    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (args.length == 0) {
+            sender.sendMessage(Component.text("使用法: /mp <プレイヤー名>").color(NamedTextColor.RED));
+            return true;
+        }
+
+        String playerName = args[0];
+        List<String> results = plugin.getMemoManager().findMemosByPlayer(playerName, 5);
+
+        if (results.isEmpty()) {
+            sender.sendMessage(Component.text(playerName + " のメモが見つかりませんでした。").color(NamedTextColor.RED));
+            return true;
+        }
+
+        sender.sendMessage(Component.text(playerName + " の直近メモ (" + results.size() + "件):").color(NamedTextColor.YELLOW));
+        for (String result : results) {
+            sender.sendMessage(Component.text(result).color(NamedTextColor.AQUA));
+        }
+
+        return true;
+    }
+}

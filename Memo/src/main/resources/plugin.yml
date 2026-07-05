@@ -1,0 +1,22 @@
+name: Memo
+version: '${version}'
+main: com.suzunayui.memo.Memo
+api-version: '1.21'
+author: SuzunaYui
+
+commands:
+  memo:
+    description: メモを現在地と一緒に保存します
+    usage: /<command> <文字列>
+  ms:
+    description: メモを文字列で検索します
+    usage: /<command> <検索文字列>
+  mn:
+    description: 近くのメモを5件まで表示します
+    usage: /<command>
+  md:
+    description: メモをIDで削除します
+    usage: /<command> <メモID>
+  mp:
+    description: 指定プレイヤーの直近メモを5件まで表示します
+    usage: /<command> <プレイヤー名>
