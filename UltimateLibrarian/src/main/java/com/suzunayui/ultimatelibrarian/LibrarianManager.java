@@ -7,6 +7,9 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Villager;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.MerchantRecipe;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
@@ -15,19 +18,52 @@ import org.bukkit.persistence.PersistentDataType;
 
 import java.util.*;
 
-public class LibrarianManager {
+public class LibrarianManager implements Listener {
     
-    private final List<UUID> spawnedNPCs = new ArrayList<>();
+    private final UltimateLibrarian plugin;
+    private final NPCStorage storage;
     private final NamespacedKey npcTypeKey;
     
     public LibrarianManager(UltimateLibrarian plugin) {
+        this.plugin = plugin;
         this.npcTypeKey = new NamespacedKey(plugin, "npc_type");
+        this.storage = new NPCStorage(plugin);
+        plugin.getServer().getPluginManager().registerEvents(this, plugin);
+    }
+    
+    public void loadNPCs() {
+        storage.load();
+        for (NPCStorage.NPCData npc : storage.getAllNPCs()) {
+            Location loc = npc.location();
+            if (loc.getChunk().isLoaded()) {
+                spawnNPCInternal(loc, npc.type());
+            }
+        }
+        plugin.getLogger().info("Loaded " + storage.getAllNPCs().size() + " librarian NPCs.");
     }
     
     public void spawnNPC(Player player, String type) {
         World world = player.getWorld();
         Location loc = player.getLocation().add(player.getLocation().getDirection().multiply(2));
         loc.setY(player.getLocation().getY());
+        loc.setX(loc.getBlockX());
+        loc.setY(loc.getBlockY());
+        loc.setZ(loc.getBlockZ());
+        
+        if (isNPCLocation(loc)) {
+            player.sendMessage(Component.text("その場所には既にNPCがいます。").color(NamedTextColor.RED));
+            return;
+        }
+        
+        spawnNPCInternal(loc, type);
+        storage.addNPC(loc, type);
+        
+        player.sendMessage(Component.text("司書NPCを召喚しました！").color(NamedTextColor.GREEN));
+    }
+    
+    private void spawnNPCInternal(Location loc, String type) {
+        World world = loc.getWorld();
+        if (world == null) return;
         
         Villager villager = world.spawn(loc, Villager.class);
         villager.setProfession(Villager.Profession.LIBRARIAN);
@@ -42,12 +78,10 @@ public class LibrarianManager {
         
         PersistentDataContainer pdc = villager.getPersistentDataContainer();
         pdc.set(npcTypeKey, PersistentDataType.STRING, type);
+        pdc.set(new NamespacedKey(plugin, "npc_location"), PersistentDataType.STRING, 
+            loc.getBlockX() + "," + loc.getBlockY() + "," + loc.getBlockZ());
         
         setupTrades(villager, type);
-        
-        spawnedNPCs.add(villager.getUniqueId());
-        
-        player.sendMessage(Component.text("司書NPCを召喚しました！").color(NamedTextColor.GREEN));
     }
     
     public void removeNPCs(Player player) {
@@ -58,13 +92,17 @@ public class LibrarianManager {
             if (entity instanceof Villager villager) {
                 PersistentDataContainer pdc = villager.getPersistentDataContainer();
                 if (pdc.has(npcTypeKey, PersistentDataType.STRING)) {
+                    Location loc = villager.getLocation();
+                    loc.setX(loc.getBlockX());
+                    loc.setY(loc.getBlockY());
+                    loc.setZ(loc.getBlockZ());
+                    storage.removeNPC(loc);
                     villager.remove();
                     removed++;
                 }
             }
         }
         
-        spawnedNPCs.clear();
         player.sendMessage(Component.text(removed + "体の司書NPCを削除しました。").color(NamedTextColor.YELLOW));
     }
     
@@ -79,7 +117,35 @@ public class LibrarianManager {
                 }
             }
         }
-        spawnedNPCs.clear();
+        storage.removeAll();
+    }
+    
+    @EventHandler
+    public void onChunkLoad(ChunkLoadEvent event) {
+        Chunk chunk = event.getChunk();
+        World world = chunk.getWorld();
+        
+        for (NPCStorage.NPCData npc : storage.getNPCsInChunk(chunk.getX(), chunk.getZ(), world)) {
+            Location loc = npc.location();
+            if (!isNPCLocation(loc)) {
+                spawnNPCInternal(loc, npc.type());
+            }
+        }
+    }
+    
+    private boolean isNPCLocation(Location loc) {
+        World world = loc.getWorld();
+        if (world == null) return false;
+        
+        for (Entity entity : world.getNearbyEntities(loc, 1, 1, 1)) {
+            if (entity instanceof Villager villager) {
+                PersistentDataContainer pdc = villager.getPersistentDataContainer();
+                if (pdc.has(npcTypeKey, PersistentDataType.STRING)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
     
     private Component getCustomName(String type) {

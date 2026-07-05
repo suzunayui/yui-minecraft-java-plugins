@@ -1,0 +1,10 @@
+name: ReturnHome
+version: '${version}'
+main: com.suzunayui.returnhome.ReturnHome
+api-version: '1.21'
+author: SuzunaYui
+
+commands:
+  home:
+    description: ベッドまたは初期スポーンに帰還します
+    usage: /<command>

@@ -1,6 +1,8 @@
 package com.suzunayui.compactfarms;
 
+import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.block.Container;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.inventory.ItemStack;
@@ -12,7 +14,7 @@ public class ResourceGenerator {
     
     private static ResourceGenerator instance;
     private final CompactFarms plugin;
-    private final Map<UUID, List<Container>> registeredContainers;
+    private final Map<UUID, List<Location>> registeredContainers;
     private BukkitRunnable task;
     
     public ResourceGenerator(CompactFarms plugin) {
@@ -51,8 +53,16 @@ public class ResourceGenerator {
     private void generateResources() {
         FileConfiguration config = plugin.getConfig();
         
-        for (List<Container> containers : registeredContainers.values()) {
-            for (Container container : containers) {
+        for (Map.Entry<UUID, List<Location>> entry : registeredContainers.entrySet()) {
+            List<Location> locations = entry.getValue();
+            locations.removeIf(loc -> loc.getWorld() == null);
+            
+            for (Location loc : locations) {
+                if (!loc.getChunk().isLoaded()) continue;
+                
+                Block block = loc.getBlock();
+                if (!(block.getState() instanceof Container container)) continue;
+                
                 if (container.getInventory().getViewers().isEmpty()) {
                     Material resourceType = getResourceType(container);
                     if (resourceType == null) continue;
@@ -83,31 +93,54 @@ public class ResourceGenerator {
         return null;
     }
     
-    public void registerContainer(UUID owner, Container container) {
-        registeredContainers.computeIfAbsent(owner, k -> new ArrayList<>()).add(container);
+    public void registerContainer(UUID owner, Location location) {
+        if (isLocationRegistered(owner, location)) return;
+        registeredContainers.computeIfAbsent(owner, k -> new ArrayList<>()).add(location);
     }
     
-    public void unregisterContainer(UUID owner, Container container) {
-        List<Container> containers = registeredContainers.get(owner);
-        if (containers != null) {
-            containers.remove(container);
+    public void unregisterContainer(UUID owner, Location location) {
+        List<Location> locations = registeredContainers.get(owner);
+        if (locations != null) {
+            locations.removeIf(loc ->
+                loc.getWorld() == location.getWorld() &&
+                loc.getBlockX() == location.getBlockX() &&
+                loc.getBlockY() == location.getBlockY() &&
+                loc.getBlockZ() == location.getBlockZ()
+            );
         }
     }
     
-    public int getContainerCount(UUID owner) {
-        List<Container> containers = registeredContainers.get(owner);
-        return containers != null ? containers.size() : 0;
+    public boolean isLocationRegistered(UUID owner, Location location) {
+        List<Location> locations = registeredContainers.get(owner);
+        if (locations == null) return false;
+        for (Location loc : locations) {
+            if (loc.getWorld() == location.getWorld() &&
+                loc.getBlockX() == location.getBlockX() &&
+                loc.getBlockY() == location.getBlockY() &&
+                loc.getBlockZ() == location.getBlockZ()) {
+                return true;
+            }
+        }
+        return false;
     }
     
-    public boolean hasContainerOfType(UUID owner, Material containerType) {
-        List<Container> containers = registeredContainers.get(owner);
-        if (containers == null) return false;
-        return containers.stream().anyMatch(c -> c.getType() == containerType);
+    public int getContainerCount(UUID owner) {
+        List<Location> locations = registeredContainers.get(owner);
+        return locations != null ? locations.size() : 0;
     }
     
     public int getContainerCountOfType(UUID owner, Material containerType) {
-        List<Container> containers = registeredContainers.get(owner);
-        if (containers == null) return 0;
-        return (int) containers.stream().filter(c -> c.getType() == containerType).count();
+        List<Location> locations = registeredContainers.get(owner);
+        if (locations == null) return 0;
+        int count = 0;
+        for (Location loc : locations) {
+            if (loc.getWorld() == null) continue;
+            if (!loc.getChunk().isLoaded()) continue;
+            Block block = loc.getBlock();
+            if (block.getType() == containerType) {
+                count++;
+            }
+        }
+        return count;
     }
 }

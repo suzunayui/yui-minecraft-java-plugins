@@ -47,14 +47,15 @@ public class CompactFarms extends JavaPlugin {
     private void scanAndRegisterExistingContainers(ContainerListener listener) {
         int count = 0;
         
-        for (World world : Bukkit.getWorlds()) {
+        for (org.bukkit.World world : Bukkit.getWorlds()) {
             for (org.bukkit.Chunk chunk : world.getLoadedChunks()) {
                 for (org.bukkit.block.BlockState blockState : chunk.getTileEntities()) {
                     if (blockState instanceof Container container) {
                         if (isCompactFarms(container)) {
                             UUID owner = listener.loadOwner(container);
                             if (owner != null) {
-                                ResourceGenerator.getInstance().registerContainer(owner, container);
+                                org.bukkit.Location loc = new org.bukkit.Location(blockState.getWorld(), blockState.getX(), blockState.getY(), blockState.getZ());
+                                ResourceGenerator.getInstance().registerContainer(owner, loc);
                                 count++;
                             }
                         }

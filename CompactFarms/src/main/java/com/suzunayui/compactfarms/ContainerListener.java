@@ -1,15 +1,16 @@
 package com.suzunayui.compactfarms;
 
+import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
 import org.bukkit.block.Container;
 import org.bukkit.block.TileState;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.world.ChunkLoadEvent;
+import org.bukkit.NamespacedKey;
 import org.bukkit.persistence.PersistentDataContainer;
 
 import java.util.UUID;
@@ -27,7 +28,7 @@ public class ContainerListener implements Listener {
         Block block = event.getBlock();
         if (block.getState() instanceof Container container) {
             if (isCompactFarms(container)) {
-                Player player = event.getPlayer();
+                var player = event.getPlayer();
                 UUID owner = player.getUniqueId();
                 
                 int maxPerType = plugin.getConfig().getInt("global.max-per-type", 1);
@@ -40,7 +41,8 @@ public class ContainerListener implements Listener {
                 }
                 
                 saveOwner(container, owner);
-                ResourceGenerator.getInstance().registerContainer(owner, container);
+                Location loc = new Location(block.getWorld(), block.getX(), block.getY(), block.getZ());
+                ResourceGenerator.getInstance().registerContainer(owner, loc);
                 String resourceName = getResourceName(container);
                 player.sendMessage("§a" + resourceName + "CompactFarmsを登録しました！自動的に資源が生成されます。");
             }
@@ -52,14 +54,30 @@ public class ContainerListener implements Listener {
         Block block = event.getBlock();
         if (block.getState() instanceof Container container) {
             if (isCompactFarms(container)) {
-                Player player = event.getPlayer();
+                var player = event.getPlayer();
                 UUID owner = loadOwner(container);
                 if (owner != null) {
-                    ResourceGenerator.getInstance().unregisterContainer(owner, container);
+                    Location loc = new Location(block.getWorld(), block.getX(), block.getY(), block.getZ());
+                    ResourceGenerator.getInstance().unregisterContainer(owner, loc);
                 }
                 clearOwner(container);
                 String resourceName = getResourceName(container);
                 player.sendMessage("§e" + resourceName + "CompactFarmsを解除しました。");
+            }
+        }
+    }
+    
+    @EventHandler
+    public void onChunkLoad(ChunkLoadEvent event) {
+        for (org.bukkit.block.BlockState blockState : event.getChunk().getTileEntities()) {
+            if (blockState instanceof Container container) {
+                if (isCompactFarms(container)) {
+                    UUID owner = loadOwner(container);
+                    if (owner != null) {
+                        Location loc = new Location(blockState.getWorld(), blockState.getX(), blockState.getY(), blockState.getZ());
+                        ResourceGenerator.getInstance().registerContainer(owner, loc);
+                    }
+                }
             }
         }
     }

@@ -1,5 +1,6 @@
 package com.suzunayui.ultimatelibrarian;
 
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class UltimateLibrarian extends JavaPlugin {
@@ -19,14 +20,15 @@ public class UltimateLibrarian extends JavaPlugin {
             getCommand("ultimatelibrarian").setTabCompleter(cmd);
         }
         
+        Bukkit.getScheduler().runTaskLater(this, () -> {
+            librarianManager.loadNPCs();
+        }, 20L);
+        
         getLogger().info("UltimateLibrarian has been enabled!");
     }
     
     @Override
     public void onDisable() {
-        if (librarianManager != null) {
-            librarianManager.removeAllNPCs();
-        }
         getLogger().info("UltimateLibrarian has been disabled!");
     }
     
