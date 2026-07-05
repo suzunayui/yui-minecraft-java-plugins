@@ -35,21 +35,27 @@ public class ContainerSearchCommand implements CommandExecutor, TabCompleter {
         if (args.length == 0) {
             player.sendMessage("§6=== ContainerSearch Help ===");
             player.sendMessage("§e/cs <アイテム名> §7- 近くのコンテナからアイテムを検索");
+            player.sendMessage("§7日本語名でも検索できます（例: /cs ダイヤモンド）");
             return true;
         }
         
-        String itemName = args[0].toUpperCase();
-        Material targetItem;
+        String input = args[0];
+        Material targetItem = null;
         
-        try {
-            targetItem = Material.valueOf(itemName);
-        } catch (IllegalArgumentException e) {
-            player.sendMessage("§c不明なアイテム名です: " + args[0]);
-            return true;
+        if (JapaneseItemNames.isJapaneseName(input)) {
+            targetItem = JapaneseItemNames.fromJapaneseName(input);
+        } else {
+            try {
+                targetItem = Material.valueOf(input.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                player.sendMessage("§c不明なアイテム名です: " + input);
+                player.sendMessage("§7日本語名でも検索できます（例: ダイヤモンド）");
+                return true;
+            }
         }
         
-        if (!targetItem.isItem()) {
-            player.sendMessage("§cそのアイテムは検索できません: " + args[0]);
+        if (targetItem == null || !targetItem.isItem()) {
+            player.sendMessage("§cそのアイテムは検索できません: " + input);
             return true;
         }
         
@@ -77,18 +83,30 @@ public class ContainerSearchCommand implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
-            String input = args[0].toUpperCase();
-            return Arrays.stream(Material.values())
+            String input = args[0];
+            List<String> suggestions = new ArrayList<>();
+            
+            suggestions.addAll(JapaneseItemNames.getJapaneseNamesStartingWith(input));
+            
+            String upperInput = input.toUpperCase();
+            Arrays.stream(Material.values())
                 .filter(Material::isItem)
                 .map(Material::name)
-                .filter(name -> name.startsWith(input))
+                .filter(name -> name.startsWith(upperInput))
                 .sorted()
-                .collect(Collectors.toList());
+                .forEach(suggestions::add);
+            
+            return suggestions;
         }
         return new ArrayList<>();
     }
     
     private String getItemDisplayName(Material material) {
+        String japaneseName = JapaneseItemNames.toJapaneseName(material);
+        if (japaneseName != null) {
+            return japaneseName;
+        }
+        
         String name = material.name().toLowerCase();
         StringBuilder result = new StringBuilder();
         boolean capitalizeNext = true;

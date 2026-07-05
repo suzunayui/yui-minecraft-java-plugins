@@ -9,8 +9,9 @@ Minecraft Java Edition 用のプラグインをまとめたリポジトリです
 | [CompactFarms](./CompactFarms) | シュルカーボックスに自動的に資源を生成するプラグイン |
 | [ContainerSearch](./ContainerSearch) | 近くのコンテナの中身を検索するプラグイン |
 | [LogDestroyer](./LogDestroyer) | 木の斧で木を一括破壊するプラグイン |
+| [Memo](./Memo) | メモを座標付きで保存・検索できるプラグイン |
 | [PositionHUD](./PositionHUD) | 画面に座標を表示するプラグイン |
-| [RecycleGacha](./RecycleGacha) | アイテムをリサイクルしてレアアイテムを入手するガチャプラグイン |
+| [ReturnHome](./ReturnHome) | `/home`コマンドでホームにテレポートするプラグイン |
 | [SimpleBackup](./SimpleBackup) | サーバーの自動バックアッププラグイン |
 | [UltimateLibrarian](./UltimateLibrarian) | 交易所NPCプラグイン |
 
