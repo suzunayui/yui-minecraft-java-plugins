@@ -1,0 +1,6 @@
+name: BedNotify
+version: '${version}'
+main: com.suzunayui.bednotify.BedNotify
+api-version: '1.21'
+author: Yui
+description: プレイヤーがベッドで寝たときに通知するプラグイン

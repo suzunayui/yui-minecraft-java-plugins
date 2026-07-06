@@ -1,0 +1,6 @@
+name: HitNotice
+version: '1.0.0'
+main: com.suzunayui.hitnotice.HitNotice
+api-version: '1.21'
+author: Yui
+description: プレイヤーが攻撃したときに通知メッセージを表示します

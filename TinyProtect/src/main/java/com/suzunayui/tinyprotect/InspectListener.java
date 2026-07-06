@@ -40,12 +40,7 @@ public class InspectListener implements Listener {
 
         event.setCancelled(true);
 
-        Block targetBlock;
-        if (event.getBlockFace() != null) {
-            targetBlock = clickedBlock.getRelative(event.getBlockFace());
-        } else {
-            targetBlock = clickedBlock;
-        }
+        Block targetBlock = clickedBlock;
 
         Location loc = targetBlock.getLocation();
         DatabaseManager db = plugin.getDatabaseManager();

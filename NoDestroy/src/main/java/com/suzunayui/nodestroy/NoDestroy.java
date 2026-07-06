@@ -1,17 +1,23 @@
 package com.suzunayui.nodestroy;
 
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
+import org.bukkit.block.Dispenser;
+import org.bukkit.block.TileState;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBurnEvent;
+import org.bukkit.event.block.BlockDispenseEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.HashSet;
@@ -87,11 +93,23 @@ public class NoDestroy extends JavaPlugin implements Listener {
     @EventHandler(priority = EventPriority.HIGH)
     public void onBlockPlace(BlockPlaceEvent event) {
         Block block = event.getBlock();
+        Player player = event.getPlayer();
+        
+        // TNTの設置禁止
         if (block.getType() == Material.TNT) {
-            Player player = event.getPlayer();
             if (!isAllowed(player.getUniqueId())) {
                 player.sendMessage("§cTNTの設置は禁止されています。");
                 event.setCancelled(true);
+            }
+        }
+        
+        // ディスペンサーの設置者を記録
+        if (block.getType() == Material.DISPENSER) {
+            if (block.getState() instanceof TileState tileState) {
+                PersistentDataContainer pdc = tileState.getPersistentDataContainer();
+                NamespacedKey key = new NamespacedKey(this, "dispenser-owner");
+                pdc.set(key, PersistentDataType.STRING, player.getUniqueId().toString());
+                tileState.update();
             }
         }
     }
@@ -111,6 +129,15 @@ public class NoDestroy extends JavaPlugin implements Listener {
             return;
         }
 
+        // TNT付きトロッコの設置禁止
+        if (item.getType() == Material.TNT_MINECART) {
+            if (!isAllowed(player.getUniqueId())) {
+                player.sendMessage("§cTNT付きトロッコの設置は禁止されています。");
+                event.setCancelled(true);
+            }
+            return;
+        }
+
         if (event.getClickedBlock() != null && event.getClickedBlock().getType() == Material.TNT) {
             if (item.getType() == Material.FLINT_AND_STEEL || item.getType() == Material.FIRE_CHARGE) {
                 if (!isAllowed(player.getUniqueId())) {
@@ -124,6 +151,40 @@ public class NoDestroy extends JavaPlugin implements Listener {
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onBlockBurn(BlockBurnEvent event) {
         if (!fireSpreadAllowed) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onBlockDispense(BlockDispenseEvent event) {
+        ItemStack item = event.getItem();
+        Material type = item.getType();
+        
+        // 溶岩バケツまたはTNT付きトロッコの場合
+        if (type == Material.LAVA_BUCKET || type == Material.TNT_MINECART) {
+            Block block = event.getBlock();
+            
+            // ディスペンサーの設置者を取得
+            if (block.getState() instanceof TileState tileState) {
+                PersistentDataContainer pdc = tileState.getPersistentDataContainer();
+                NamespacedKey key = new NamespacedKey(this, "dispenser-owner");
+                
+                if (pdc.has(key, PersistentDataType.STRING)) {
+                    String ownerUuid = pdc.get(key, PersistentDataType.STRING);
+                    if (ownerUuid != null) {
+                        try {
+                            UUID ownerId = UUID.fromString(ownerUuid);
+                            // 設置者が許可リストに含まれている場合のみ射出を許可
+                            if (isAllowed(ownerId)) {
+                                return;
+                            }
+                        } catch (IllegalArgumentException ignored) {
+                        }
+                    }
+                }
+            }
+            
+            // 許可されていない場合
             event.setCancelled(true);
         }
     }
