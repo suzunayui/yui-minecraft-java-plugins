@@ -300,10 +300,14 @@ public class DatabaseManager {
         return results;
     }
 
+    private static final Set<Material> SKIP_MATERIALS = Set.of(
+            Material.FIRE, Material.SOUL_FIRE, Material.WATER, Material.LAVA
+    );
+
     public int rollbackPlayer(String playerName, String world, long sinceTimestamp) {
         int count = 0;
         try {
-            String sql = "SELECT * FROM logs WHERE player_name = ? AND world = ? AND timestamp >= ? ORDER BY timestamp DESC";
+            String sql = "SELECT * FROM logs WHERE player_name = ? AND world = ? AND timestamp >= ? ORDER BY timestamp ASC";
             try (PreparedStatement ps = connection.prepareStatement(sql)) {
                 ps.setString(1, playerName);
                 ps.setString(2, world);
@@ -314,7 +318,16 @@ public class DatabaseManager {
                         entries.add(readLogEntry(rs));
                     }
 
+                    // 各座標について、最初の操作だけを処理する
+                    Map<String, LogEntry> firstEntryByLocation = new HashMap<>();
                     for (LogEntry entry : entries) {
+                        String locKey = entry.x + ":" + entry.y + ":" + entry.z;
+                        if (!firstEntryByLocation.containsKey(locKey)) {
+                            firstEntryByLocation.put(locKey, entry);
+                        }
+                    }
+
+                    for (LogEntry entry : firstEntryByLocation.values()) {
                         Location loc = new Location(
                                 plugin.getServer().getWorld(entry.world),
                                 entry.x, entry.y, entry.z
@@ -326,6 +339,7 @@ public class DatabaseManager {
                         } else if ("BLOCK_BREAK".equals(entry.actionType) && entry.blockType != null) {
                             try {
                                 Material mat = Material.valueOf(entry.blockType);
+                                if (SKIP_MATERIALS.contains(mat)) continue;
                                 loc.getBlock().setType(mat);
                                 count++;
                             } catch (IllegalArgumentException ignored) {}
@@ -349,8 +363,8 @@ public class DatabaseManager {
                 AND y BETWEEN ? AND ? 
                 AND z BETWEEN ? AND ?
                 AND timestamp >= ?
-                AND action_type IN ('BLOCK_BREAK', 'BLOCK_BURN', 'EXPLOSION', 'LIQUID_DESTROY')
-                ORDER BY timestamp DESC
+                AND action_type IN ('BLOCK_PLACE', 'BLOCK_BREAK', 'BLOCK_BURN', 'EXPLOSION', 'LIQUID_DESTROY')
+                ORDER BY timestamp ASC
             """;
             try (PreparedStatement ps = connection.prepareStatement(sql)) {
                 ps.setString(1, world);
@@ -367,15 +381,28 @@ public class DatabaseManager {
                         entries.add(readLogEntry(rs));
                     }
 
+                    // 各座標について、最初の操作だけを処理する
+                    Map<String, LogEntry> firstEntryByLocation = new HashMap<>();
                     for (LogEntry entry : entries) {
+                        String locKey = entry.x + ":" + entry.y + ":" + entry.z;
+                        if (!firstEntryByLocation.containsKey(locKey)) {
+                            firstEntryByLocation.put(locKey, entry);
+                        }
+                    }
+
+                    for (LogEntry entry : firstEntryByLocation.values()) {
                         Location loc = new Location(
                                 plugin.getServer().getWorld(entry.world),
                                 entry.x, entry.y, entry.z
                         );
 
-                        if (entry.blockType != null) {
+                        if ("BLOCK_PLACE".equals(entry.actionType)) {
+                            loc.getBlock().setType(Material.AIR);
+                            count++;
+                        } else if (entry.blockType != null) {
                             try {
                                 Material mat = Material.valueOf(entry.blockType);
+                                if (SKIP_MATERIALS.contains(mat)) continue;
                                 loc.getBlock().setType(mat);
                                 count++;
                             } catch (IllegalArgumentException ignored) {}

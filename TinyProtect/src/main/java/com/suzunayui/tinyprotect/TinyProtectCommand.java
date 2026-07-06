@@ -2,6 +2,9 @@ package com.suzunayui.tinyprotect;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -37,6 +40,9 @@ public class TinyProtectCommand implements CommandExecutor {
             case "near", "n" -> handleNear(sender, args);
             case "rollback", "rb" -> handleRollback(sender, args);
             case "rollback-area", "rba" -> handleRollbackArea(sender, args);
+            case "clearfire", "cf" -> handleClearFire(sender, args);
+            case "clearwater", "cw" -> handleClearWater(sender, args);
+            case "clearlava", "cl" -> handleClearLava(sender, args);
             case "status" -> handleStatus(sender);
             case "purge" -> handlePurge(sender, args);
             case "help", "?" -> sendHelp(sender);
@@ -221,19 +227,20 @@ public class TinyProtectCommand implements CommandExecutor {
 
     private void handleRollback(CommandSender sender, String[] args) {
         if (args.length < 2) {
-            sender.sendMessage("§c使用法: /ti rollback <プレイヤー> [秒数]");
+            sender.sendMessage("§c使用法: /ti rollback <プレイヤー> [時間]");
+            sender.sendMessage("§c例: 2d, 1h, 5m, 40s, 3600");
             return;
         }
 
         String playerName = args[1];
         int seconds = 3600;
         if (args.length >= 3) {
-            try {
-                seconds = Integer.parseInt(args[2]);
-            } catch (NumberFormatException e) {
-                sender.sendMessage("§c無効な秒数です。");
+            int parsed = parseTimeToSeconds(args[2]);
+            if (parsed < 0) {
+                sender.sendMessage("§c無効な時間形式です。例: 2d, 1h, 5m, 40s");
                 return;
             }
+            seconds = parsed;
         }
 
         String world = "world";
@@ -267,12 +274,12 @@ public class TinyProtectCommand implements CommandExecutor {
         }
 
         if (args.length >= 3) {
-            try {
-                seconds = Integer.parseInt(args[2]);
-            } catch (NumberFormatException e) {
-                sender.sendMessage("§c無効な秒数です。");
+            int parsed = parseTimeToSeconds(args[2]);
+            if (parsed < 0) {
+                sender.sendMessage("§c無効な時間形式です。例: 2d, 1h, 5m, 40s");
                 return;
             }
+            seconds = parsed;
         }
 
         Location loc = player.getLocation();
@@ -324,8 +331,12 @@ public class TinyProtectCommand implements CommandExecutor {
         sender.sendMessage("§e/ti search <プレイヤー> [件数] §7- プレイヤーでログを検索");
         sender.sendMessage("§e/ti pos <x> <y> <z> [半径] [件数] §7- 座標でログを検索");
         sender.sendMessage("§e/ti near [半径] [ブロック] [break|place|container|pickup|drop|death|kill] [件数] §7- 付近のログを検索");
-        sender.sendMessage("§e/ti rollback <プレイヤー> [秒数] §7- プレイヤーのブロック変更をロールバック");
-        sender.sendMessage("§e/ti rollback-area [半径] [秒数] §7- 周囲のエリアをロールバック（爆発、火、液体）");
+        sender.sendMessage("§e/ti rollback <プレイヤー> [時間] §7- プレイヤーのブロック変更をロールバック");
+        sender.sendMessage("§e/ti rollback-area [半径] [時間] §7- 周囲のエリアをロールバック");
+        sender.sendMessage("§e  時間形式: 2d(日), 1h(時), 5m(分), 40s(秒), または秒数");
+        sender.sendMessage("§e/ti clearfire [半径] §7- 周囲の火を消す");
+        sender.sendMessage("§e/ti clearwater [半径] §7- 周囲の水を消す");
+        sender.sendMessage("§e/ti clearlava [半径] §7- 周囲の溶岩を消す");
         sender.sendMessage("§e/ti status §7- データベース統計を表示");
         sender.sendMessage("§e/ti purge <日数> §7- 指定日数より古いログを削除");
     }
@@ -362,5 +373,169 @@ public class TinyProtectCommand implements CommandExecutor {
             }
         }
         return sb.toString();
+    }
+
+    private int parseTimeToSeconds(String timeStr) {
+        timeStr = timeStr.trim().toLowerCase();
+        
+        // 数字のみの場合は秒数として扱う（後方互換性）
+        try {
+            return Integer.parseInt(timeStr);
+        } catch (NumberFormatException ignored) {}
+        
+        // 時間形式の解析
+        if (timeStr.endsWith("d")) {
+            try {
+                int days = Integer.parseInt(timeStr.substring(0, timeStr.length() - 1));
+                return days * 86400;
+            } catch (NumberFormatException e) {
+                return -1;
+            }
+        } else if (timeStr.endsWith("h")) {
+            try {
+                int hours = Integer.parseInt(timeStr.substring(0, timeStr.length() - 1));
+                return hours * 3600;
+            } catch (NumberFormatException e) {
+                return -1;
+            }
+        } else if (timeStr.endsWith("m")) {
+            try {
+                int minutes = Integer.parseInt(timeStr.substring(0, timeStr.length() - 1));
+                return minutes * 60;
+            } catch (NumberFormatException e) {
+                return -1;
+            }
+        } else if (timeStr.endsWith("s")) {
+            try {
+                return Integer.parseInt(timeStr.substring(0, timeStr.length() - 1));
+            } catch (NumberFormatException e) {
+                return -1;
+            }
+        }
+        
+        return -1;
+    }
+
+    private void handleClearFire(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage("§cこのコマンドはプレイヤーのみ使用できます。");
+            return;
+        }
+
+        int radius = 10;
+        if (args.length >= 2) {
+            try {
+                radius = Integer.parseInt(args[1]);
+                radius = Math.max(1, Math.min(100, radius));
+            } catch (NumberFormatException e) {
+                sender.sendMessage("§c無効な半径です。");
+                return;
+            }
+        }
+
+        Location loc = player.getLocation();
+        World world = loc.getWorld();
+        if (world == null) return;
+
+        int centerX = loc.getBlockX();
+        int centerY = loc.getBlockY();
+        int centerZ = loc.getBlockZ();
+        int count = 0;
+
+        for (int x = centerX - radius; x <= centerX + radius; x++) {
+            for (int y = centerY - radius; y <= centerY + radius; y++) {
+                for (int z = centerZ - radius; z <= centerZ + radius; z++) {
+                    Block block = world.getBlockAt(x, y, z);
+                    if (block.getType() == Material.FIRE || block.getType() == Material.SOUL_FIRE) {
+                        block.setType(Material.AIR);
+                        count++;
+                    }
+                }
+            }
+        }
+
+        sender.sendMessage("§e" + radius + "§aブロック以内の火を §e" + count + "§a個消しました。");
+    }
+
+    private void handleClearWater(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage("§cこのコマンドはプレイヤーのみ使用できます。");
+            return;
+        }
+
+        int radius = 10;
+        if (args.length >= 2) {
+            try {
+                radius = Integer.parseInt(args[1]);
+                radius = Math.max(1, Math.min(100, radius));
+            } catch (NumberFormatException e) {
+                sender.sendMessage("§c無効な半径です。");
+                return;
+            }
+        }
+
+        Location loc = player.getLocation();
+        World world = loc.getWorld();
+        if (world == null) return;
+
+        int centerX = loc.getBlockX();
+        int centerY = loc.getBlockY();
+        int centerZ = loc.getBlockZ();
+        int count = 0;
+
+        for (int x = centerX - radius; x <= centerX + radius; x++) {
+            for (int y = centerY - radius; y <= centerY + radius; y++) {
+                for (int z = centerZ - radius; z <= centerZ + radius; z++) {
+                    Block block = world.getBlockAt(x, y, z);
+                    if (block.getType() == Material.WATER) {
+                        block.setType(Material.AIR);
+                        count++;
+                    }
+                }
+            }
+        }
+
+        sender.sendMessage("§e" + radius + "§aブロック以内の水を §e" + count + "§a個消しました。");
+    }
+
+    private void handleClearLava(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage("§cこのコマンドはプレイヤーのみ使用できます。");
+            return;
+        }
+
+        int radius = 10;
+        if (args.length >= 2) {
+            try {
+                radius = Integer.parseInt(args[1]);
+                radius = Math.max(1, Math.min(100, radius));
+            } catch (NumberFormatException e) {
+                sender.sendMessage("§c無効な半径です。");
+                return;
+            }
+        }
+
+        Location loc = player.getLocation();
+        World world = loc.getWorld();
+        if (world == null) return;
+
+        int centerX = loc.getBlockX();
+        int centerY = loc.getBlockY();
+        int centerZ = loc.getBlockZ();
+        int count = 0;
+
+        for (int x = centerX - radius; x <= centerX + radius; x++) {
+            for (int y = centerY - radius; y <= centerY + radius; y++) {
+                for (int z = centerZ - radius; z <= centerZ + radius; z++) {
+                    Block block = world.getBlockAt(x, y, z);
+                    if (block.getType() == Material.LAVA) {
+                        block.setType(Material.AIR);
+                        count++;
+                    }
+                }
+            }
+        }
+
+        sender.sendMessage("§e" + radius + "§aブロック以内の溶岩を §e" + count + "§a個消しました。");
     }
 }

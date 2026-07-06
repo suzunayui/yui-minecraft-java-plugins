@@ -7,10 +7,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.block.BlockBurnEvent;
-import org.bukkit.event.block.BlockFromToEvent;
-import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.block.*;
 import org.bukkit.event.entity.EntityExplodeEvent;
 
 public class BlockEventListener implements Listener {
@@ -47,12 +44,24 @@ public class BlockEventListener implements Listener {
         );
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onEntityExplode(EntityExplodeEvent event) {
         String cause = event.getEntity() != null ? event.getEntity().getType().name() : "UNKNOWN";
         for (Block block : event.blockList()) {
             Location loc = block.getLocation();
             Material blockType = block.getType();
+            if (blockType == Material.AIR) continue;
+            plugin.getDatabaseManager().logExplosion(loc, blockType, cause);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onBlockExplode(BlockExplodeEvent event) {
+        String cause = event.getBlock() != null ? event.getBlock().getType().name() : "UNKNOWN";
+        for (Block block : event.blockList()) {
+            Location loc = block.getLocation();
+            Material blockType = block.getType();
+            if (blockType == Material.AIR) continue;
             plugin.getDatabaseManager().logExplosion(loc, blockType, cause);
         }
     }
@@ -69,20 +78,37 @@ public class BlockEventListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onBlockFade(BlockFadeEvent event) {
+        Block block = event.getBlock();
+        Location loc = block.getLocation();
+        Material oldType = block.getType();
+        Material newType = event.getNewState().getType();
+        
+        // 火が消える場合や、氷が溶ける場合などは記録しない
+        if (oldType == Material.FIRE || oldType == Material.SOUL_FIRE) {
+            return;
+        }
+        
+        // ブロックが溶岩や火によって消される場合
+        if (newType == Material.AIR || newType == Material.FIRE) {
+            plugin.getDatabaseManager().logBlockBurn(loc, oldType, "FADE");
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockFromTo(BlockFromToEvent event) {
+        Block fromBlock = event.getBlock();
         Block toBlock = event.getToBlock();
+        Material fromType = fromBlock.getType();
         Material toType = toBlock.getType();
         
-        if (toType == Material.AIR || toType == Material.CAVE_AIR || toType == Material.VOID_AIR) {
-            return;
+        // 溶岩や水がブロックを置き換える場合
+        if (fromType == Material.LAVA || fromType == Material.WATER) {
+            if (toType != Material.AIR && toType != Material.CAVE_AIR && toType != Material.VOID_AIR) {
+                // 元のブロックが壊れる場合
+                Location loc = toBlock.getLocation();
+                plugin.getDatabaseManager().logLiquidDestroy(loc, toType, fromType);
+            }
         }
-        
-        Material liquidType = event.getBlock().getType();
-        if (liquidType != Material.WATER && liquidType != Material.LAVA) {
-            return;
-        }
-        
-        Location loc = toBlock.getLocation();
-        plugin.getDatabaseManager().logLiquidDestroy(loc, toType, liquidType);
     }
 }

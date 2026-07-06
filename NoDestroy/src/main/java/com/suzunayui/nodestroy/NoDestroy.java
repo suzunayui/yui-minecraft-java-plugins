@@ -12,6 +12,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBurnEvent;
 import org.bukkit.event.block.BlockDispenseEvent;
+import org.bukkit.event.block.BlockFromToEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
@@ -28,6 +29,7 @@ public class NoDestroy extends JavaPlugin implements Listener {
 
     private final Set<UUID> allowedPlayers = new HashSet<>();
     private boolean fireSpreadAllowed = true;
+    private boolean lavaDestroyAllowed = true;
 
     @Override
     public void onEnable() {
@@ -71,6 +73,15 @@ public class NoDestroy extends JavaPlugin implements Listener {
         saveConfig();
     }
 
+    public boolean isLavaDestroyAllowed() {
+        return lavaDestroyAllowed;
+    }
+
+    public void setLavaDestroyAllowed(boolean allowed) {
+        this.lavaDestroyAllowed = allowed;
+        saveConfig();
+    }
+
     private void loadConfig() {
         FileConfiguration config = getConfig();
         
@@ -85,9 +96,11 @@ public class NoDestroy extends JavaPlugin implements Listener {
         }
         
         fireSpreadAllowed = config.getBoolean("fire-spread-allowed", true);
+        lavaDestroyAllowed = config.getBoolean("lava-destroy-allowed", true);
         
         getLogger().info("Loaded " + allowedPlayers.size() + " allowed players.");
         getLogger().info("Fire spread: " + (fireSpreadAllowed ? "enabled" : "disabled"));
+        getLogger().info("Lava destroy: " + (lavaDestroyAllowed ? "enabled" : "disabled"));
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -152,6 +165,20 @@ public class NoDestroy extends JavaPlugin implements Listener {
     public void onBlockBurn(BlockBurnEvent event) {
         if (!fireSpreadAllowed) {
             event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onBlockFromTo(BlockFromToEvent event) {
+        if (!lavaDestroyAllowed) {
+            Material fromType = event.getBlock().getType();
+            if (fromType == Material.LAVA) {
+                Material toType = event.getToBlock().getType();
+                // 溶岩がブロックを破壊する場合（移動先が空気でない場合）
+                if (toType != Material.AIR && toType != Material.CAVE_AIR && toType != Material.VOID_AIR && toType != Material.LAVA) {
+                    event.setCancelled(true);
+                }
+            }
         }
     }
 

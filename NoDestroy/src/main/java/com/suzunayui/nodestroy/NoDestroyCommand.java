@@ -44,6 +44,15 @@ public class NoDestroyCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
+        if (args[0].equalsIgnoreCase("lava")) {
+            if (args.length < 2) {
+                sender.sendMessage("§c使用法: /nd lava <true|false>");
+                return true;
+            }
+            handleLava(sender, args[1]);
+            return true;
+        }
+
         if (!args[0].equalsIgnoreCase("use")) {
             sendHelp(sender);
             return true;
@@ -102,12 +111,26 @@ public class NoDestroyCommand implements CommandExecutor, TabCompleter {
         }
     }
 
+    private void handleLava(CommandSender sender, String value) {
+        if (value.equalsIgnoreCase("true")) {
+            plugin.setLavaDestroyAllowed(true);
+            sender.sendMessage("§a溶岩によるブロック破壊を許可しました。");
+        } else if (value.equalsIgnoreCase("false")) {
+            plugin.setLavaDestroyAllowed(false);
+            sender.sendMessage("§e溶岩によるブロック破壊を禁止しました。");
+        } else {
+            sender.sendMessage("§c使用法: /nd lava <true|false>");
+        }
+    }
+
     private void sendHelp(CommandSender sender) {
         sender.sendMessage("§6=== NoDestroy コマンド ===");
         sender.sendMessage("§e/nd use <プレイヤー名> true §7- 使用を許可する");
         sender.sendMessage("§e/nd use <プレイヤー名> false §7- 許可を取り消す");
         sender.sendMessage("§e/nd fire true §7- 火の燃え広がりを許可する");
         sender.sendMessage("§e/nd fire false §7- 火の燃え広がりを禁止する（ブロックが燃え尽きない）");
+        sender.sendMessage("§e/nd lava true §7- 溶岩によるブロック破壊を許可する");
+        sender.sendMessage("§e/nd lava false §7- 溶岩によるブロック破壊を禁止する");
         sender.sendMessage("§e/nd list §7- 許可リストを表示");
     }
 
@@ -121,6 +144,7 @@ public class NoDestroyCommand implements CommandExecutor, TabCompleter {
             String input = args[0].toLowerCase();
             if ("use".startsWith(input)) completions.add("use");
             if ("fire".startsWith(input)) completions.add("fire");
+            if ("lava".startsWith(input)) completions.add("lava");
             if ("list".startsWith(input)) completions.add("list");
         } else if (args.length == 2 && args[0].equalsIgnoreCase("use")) {
             String input = args[1].toLowerCase();
@@ -129,7 +153,7 @@ public class NoDestroyCommand implements CommandExecutor, TabCompleter {
                     completions.add(player.getName());
                 }
             }
-        } else if (args.length == 2 && args[0].equalsIgnoreCase("fire")) {
+        } else if (args.length == 2 && (args[0].equalsIgnoreCase("fire") || args[0].equalsIgnoreCase("lava"))) {
             String input = args[1].toLowerCase();
             if ("true".startsWith(input)) completions.add("true");
             if ("false".startsWith(input)) completions.add("false");
