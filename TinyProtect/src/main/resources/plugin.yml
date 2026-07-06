@@ -1,0 +1,20 @@
+name: TinyProtect
+version: '${version}'
+main: com.suzunayui.tinyprotect.TinyProtect
+api-version: '1.21'
+author: Yui
+description: Lightweight protection and logging plugin - simplified CoreProtect alternative
+
+commands:
+  tpi:
+    description: TinyProtect main command
+    usage: /<command> <inspect|search|pos|rollback|status|purge>
+    permission: tinyprotect.admin
+
+permissions:
+  tinyprotect.admin:
+    description: Allows using TinyProtect commands
+    default: op
+  tinyprotect.bypass:
+    description: Bypass TinyProtect logging
+    default: false

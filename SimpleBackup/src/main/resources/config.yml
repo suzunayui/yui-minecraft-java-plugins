@@ -1,0 +1,4 @@
+# バックアップ後に元のフォルダを削除するかどうか
+# true: zip圧縮後にフォルダを削除（推奨）
+# false: フォルダとzipの両方を保持
+delete-after-compress: true

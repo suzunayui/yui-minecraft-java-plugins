@@ -1,0 +1,10 @@
+name: PersonalKeepInventory
+version: '${version}'
+main: com.suzunayui.personalkeepinventory.PersonalKeepInventory
+api-version: '1.21'
+author: SuzunaYui
+
+commands:
+  keep:
+    description: 死亡時のアイテム保持のON/OFFを切り替えます
+    usage: /<command> [on|off]

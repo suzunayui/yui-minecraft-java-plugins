@@ -8,12 +8,17 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 public class SimpleBackup extends JavaPlugin {
     
@@ -31,7 +36,7 @@ public class SimpleBackup extends JavaPlugin {
         }
         
         getLogger().info("Starting backup...");
-        createBackup();
+        Bukkit.getScheduler().runTaskAsynchronously(this, () -> createBackup());
         
         startScheduledBackup();
         
@@ -52,7 +57,7 @@ public class SimpleBackup extends JavaPlugin {
             public void run() {
                 if (Bukkit.getOnlinePlayers().size() >= 1) {
                     getLogger().info("Creating scheduled backup...");
-                    createBackup();
+                    Bukkit.getScheduler().runTaskAsynchronously(instance, () -> createBackup());
                 }
             }
         };
@@ -62,8 +67,9 @@ public class SimpleBackup extends JavaPlugin {
     }
     
     public void createBackup() {
-        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm"));
+        String timestamp = LocalDateTime.now(ZoneId.of("Asia/Tokyo")).format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm"));
         File backupFolder = new File(backupDir, timestamp);
+        File zipFile = new File(backupDir, timestamp + ".zip");
         
         try {
             for (World world : Bukkit.getWorlds()) {
@@ -72,7 +78,15 @@ public class SimpleBackup extends JavaPlugin {
                 copyFolder(worldFolder.toPath(), targetPath);
             }
             
-            getLogger().info("Backup created: " + backupFolder.getName());
+            getLogger().info("Copying completed. Compressing to zip...");
+            compressToZip(backupFolder, zipFile);
+            
+            boolean deleteAfterCompress = getConfig().getBoolean("delete-after-compress", true);
+            if (deleteAfterCompress) {
+                deleteFolder(backupFolder);
+            }
+            
+            getLogger().info("Backup created: " + zipFile.getName());
         } catch (IOException e) {
             getLogger().severe("Failed to create backup: " + e.getMessage());
             e.printStackTrace();
@@ -95,6 +109,53 @@ public class SimpleBackup extends JavaPlugin {
                 Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
             }
         }
+    }
+    
+    private void compressToZip(File sourceFolder, File zipFile) throws IOException {
+        try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipFile))) {
+            zipFolder(sourceFolder, sourceFolder.getName(), zos);
+        }
+    }
+    
+    private void zipFolder(File folder, String parentPath, ZipOutputStream zos) throws IOException {
+        File[] files = folder.listFiles();
+        if (files == null) return;
+        
+        byte[] buffer = new byte[8192];
+        
+        for (File file : files) {
+            String entryPath = parentPath + "/" + file.getName();
+            
+            if (file.isDirectory()) {
+                zipFolder(file, entryPath, zos);
+            } else {
+                ZipEntry entry = new ZipEntry(entryPath);
+                zos.putNextEntry(entry);
+                
+                try (FileInputStream fis = new FileInputStream(file)) {
+                    int length;
+                    while ((length = fis.read(buffer)) > 0) {
+                        zos.write(buffer, 0, length);
+                    }
+                }
+                
+                zos.closeEntry();
+            }
+        }
+    }
+    
+    private void deleteFolder(File folder) {
+        File[] files = folder.listFiles();
+        if (files == null) return;
+        
+        for (File file : files) {
+            if (file.isDirectory()) {
+                deleteFolder(file);
+            } else {
+                file.delete();
+            }
+        }
+        folder.delete();
     }
     
     @Override
