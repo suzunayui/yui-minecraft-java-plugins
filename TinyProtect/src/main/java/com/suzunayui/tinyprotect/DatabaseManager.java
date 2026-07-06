@@ -102,6 +102,22 @@ public class DatabaseManager {
         return logAction(playerUuid, playerName, "PLAYER_DEATH", loc, null, null, 0, "killer=" + killerName + ";cause=" + cause);
     }
 
+    public CompletableFuture<Void> logEntityKill(UUID killerUuid, String killerName, Location loc, String entityType, String cause) {
+        return logAction(killerUuid, killerName, "ENTITY_KILL", loc, entityType, null, 0, "cause=" + cause);
+    }
+
+    public CompletableFuture<Void> logExplosion(Location loc, Material blockType, String cause) {
+        return logAction(UUID.fromString("00000000-0000-0000-0000-000000000000"), "ENVIRONMENT", "EXPLOSION", loc, blockType.name(), null, 0, "cause=" + cause);
+    }
+
+    public CompletableFuture<Void> logBlockBurn(Location loc, Material blockType, String cause) {
+        return logAction(UUID.fromString("00000000-0000-0000-0000-000000000000"), "ENVIRONMENT", "BLOCK_BURN", loc, blockType.name(), null, 0, "cause=" + cause);
+    }
+
+    public CompletableFuture<Void> logLiquidDestroy(Location loc, Material blockType, Material liquidType) {
+        return logAction(UUID.fromString("00000000-0000-0000-0000-000000000000"), "ENVIRONMENT", "LIQUID_DESTROY", loc, blockType.name(), liquidType.name(), 0, null);
+    }
+
     private CompletableFuture<Void> logAction(UUID playerUuid, String playerName, String actionType,
                                                Location loc, String blockType, String itemType, int amount, String extraData) {
         return CompletableFuture.runAsync(() -> {
@@ -319,6 +335,56 @@ public class DatabaseManager {
             }
         } catch (SQLException e) {
             plugin.getLogger().severe("Failed to rollback: " + e.getMessage());
+        }
+        return count;
+    }
+
+    public int rollbackArea(String world, int centerX, int centerY, int centerZ, int radius, long sinceTimestamp) {
+        int count = 0;
+        try {
+            String sql = """
+                SELECT * FROM logs 
+                WHERE world = ? 
+                AND x BETWEEN ? AND ? 
+                AND y BETWEEN ? AND ? 
+                AND z BETWEEN ? AND ?
+                AND timestamp >= ?
+                AND action_type IN ('BLOCK_BREAK', 'BLOCK_BURN', 'EXPLOSION', 'LIQUID_DESTROY')
+                ORDER BY timestamp DESC
+            """;
+            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+                ps.setString(1, world);
+                ps.setInt(2, centerX - radius);
+                ps.setInt(3, centerX + radius);
+                ps.setInt(4, centerY - radius);
+                ps.setInt(5, centerY + radius);
+                ps.setInt(6, centerZ - radius);
+                ps.setInt(7, centerZ + radius);
+                ps.setLong(8, sinceTimestamp);
+                try (ResultSet rs = ps.executeQuery()) {
+                    List<LogEntry> entries = new ArrayList<>();
+                    while (rs.next()) {
+                        entries.add(readLogEntry(rs));
+                    }
+
+                    for (LogEntry entry : entries) {
+                        Location loc = new Location(
+                                plugin.getServer().getWorld(entry.world),
+                                entry.x, entry.y, entry.z
+                        );
+
+                        if (entry.blockType != null) {
+                            try {
+                                Material mat = Material.valueOf(entry.blockType);
+                                loc.getBlock().setType(mat);
+                                count++;
+                            } catch (IllegalArgumentException ignored) {}
+                        }
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Failed to rollback area: " + e.getMessage());
         }
         return count;
     }

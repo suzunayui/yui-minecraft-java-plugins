@@ -28,7 +28,7 @@ public class TinyProtect extends JavaPlugin {
 
         CommandExecutor executor = new TinyProtectCommand(this);
         TabCompleter tabCompleter = new TinyProtectTabCompleter();
-        var cmd = getCommand("tpi");
+        var cmd = getCommand("ti");
         if (cmd != null) {
             cmd.setExecutor(executor);
             cmd.setTabCompleter(tabCompleter);

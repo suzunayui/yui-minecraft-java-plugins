@@ -6,7 +6,7 @@ author: Yui
 description: Lightweight protection and logging plugin - simplified CoreProtect alternative
 
 commands:
-  tpi:
+  ti:
     description: TinyProtect main command
     usage: /<command> <inspect|search|pos|rollback|status|purge>
     permission: tinyprotect.admin

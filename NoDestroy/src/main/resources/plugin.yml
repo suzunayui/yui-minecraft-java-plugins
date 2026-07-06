@@ -1,0 +1,12 @@
+name: NoDestroy
+version: '${version}'
+main: com.suzunayui.nodestroy.NoDestroy
+api-version: '1.21'
+author: Yui
+description: Prevents TNT and lava bucket usage to protect the server
+
+commands:
+  nd:
+    description: Manage NoDestroy permissions
+    usage: /<command> <player> <true|false>
+    permission: op

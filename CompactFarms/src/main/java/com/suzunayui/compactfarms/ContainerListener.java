@@ -9,6 +9,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.NamespacedKey;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -57,6 +58,12 @@ public class ContainerListener implements Listener {
                 var player = event.getPlayer();
                 UUID owner = loadOwner(container);
                 if (owner != null) {
+                    if (!player.getUniqueId().equals(owner)) {
+                        String ownerName = getOwnerName(owner);
+                        player.sendMessage("§cこのCompactFarmsは" + ownerName + "のものです。破壊できません。");
+                        event.setCancelled(true);
+                        return;
+                    }
                     Location loc = new Location(block.getWorld(), block.getX(), block.getY(), block.getZ());
                     ResourceGenerator.getInstance().unregisterContainer(owner, loc);
                 }
@@ -64,6 +71,22 @@ public class ContainerListener implements Listener {
                 String resourceName = getResourceName(container);
                 player.sendMessage("§e" + resourceName + "CompactFarmsを解除しました。");
             }
+        }
+    }
+    
+    @EventHandler
+    public void onInventoryOpen(InventoryOpenEvent event) {
+        if (!(event.getInventory().getHolder() instanceof Container container)) return;
+        if (!isCompactFarms(container)) return;
+        
+        UUID owner = loadOwner(container);
+        if (owner == null) return;
+        
+        UUID playerId = event.getPlayer().getUniqueId();
+        if (!playerId.equals(owner)) {
+            String ownerName = getOwnerName(owner);
+            event.getPlayer().sendMessage("§cこのCompactFarmsは" + ownerName + "のものです。");
+            event.setCancelled(true);
         }
     }
     
@@ -129,5 +152,15 @@ public class ContainerListener implements Listener {
             return "火薬";
         }
         return "";
+    }
+    
+    private String getOwnerName(UUID owner) {
+        var player = org.bukkit.Bukkit.getPlayer(owner);
+        if (player != null) {
+            return player.getName();
+        }
+        var offlinePlayer = org.bukkit.Bukkit.getOfflinePlayer(owner);
+        String name = offlinePlayer.getName();
+        return name != null ? name : "不明";
     }
 }

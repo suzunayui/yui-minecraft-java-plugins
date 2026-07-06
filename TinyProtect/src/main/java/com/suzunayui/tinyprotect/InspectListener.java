@@ -23,17 +23,31 @@ public class InspectListener implements Listener {
     @EventHandler(priority = EventPriority.HIGH)
     public void onPlayerInteract(PlayerInteractEvent event) {
         if (event.getHand() != EquipmentSlot.HAND) return;
-        if (event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
 
         Player player = event.getPlayer();
         if (!plugin.isInspectMode(player.getUniqueId())) return;
 
-        Block block = event.getClickedBlock();
-        if (block == null) return;
+        if (event.getAction() == Action.LEFT_CLICK_BLOCK) {
+            event.setCancelled(true);
+            player.sendMessage("§c調査モードが有効です。ブロック破壊は無効化されています。");
+            return;
+        }
+
+        if (event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+
+        Block clickedBlock = event.getClickedBlock();
+        if (clickedBlock == null) return;
 
         event.setCancelled(true);
 
-        Location loc = block.getLocation();
+        Block targetBlock;
+        if (event.getBlockFace() != null) {
+            targetBlock = clickedBlock.getRelative(event.getBlockFace());
+        } else {
+            targetBlock = clickedBlock;
+        }
+
+        Location loc = targetBlock.getLocation();
         DatabaseManager db = plugin.getDatabaseManager();
 
         List<DatabaseManager.LogEntry> entries = db.searchByLocation(
@@ -43,12 +57,12 @@ public class InspectListener implements Listener {
         );
 
         player.sendMessage("§6=== TinyProtect Inspect ===");
-        player.sendMessage("§eLocation: " + loc.getBlockX() + ", " + loc.getBlockY() + ", " + loc.getBlockZ());
-        player.sendMessage("§eBlock: §f" + block.getType().name());
+        player.sendMessage("§e座標: " + loc.getBlockX() + ", " + loc.getBlockY() + ", " + loc.getBlockZ());
+        player.sendMessage("§eブロック: §f" + targetBlock.getType().name());
         player.sendMessage("");
 
         if (entries.isEmpty()) {
-            player.sendMessage("§7No history found for this block.");
+            player.sendMessage("§7この座標の履歴は見つかりませんでした。");
         } else {
             for (DatabaseManager.LogEntry entry : entries) {
                 String time = db.formatTimestamp(entry.timestamp);
@@ -71,6 +85,10 @@ public class InspectListener implements Listener {
             case "ITEM_PICKUP" -> "§e[Pickup]";
             case "ITEM_DROP" -> "§7[Drop]";
             case "PLAYER_DEATH" -> "§4[Death]";
+            case "ENTITY_KILL" -> "§4[Kill]";
+            case "EXPLOSION" -> "§4[Exploded]";
+            case "BLOCK_BURN" -> "§4[Burned]";
+            case "LIQUID_DESTROY" -> "§4[Liquid]";
             default -> "§8[" + actionType + "]";
         };
     }

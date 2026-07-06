@@ -18,6 +18,16 @@ for /d %%d in (*) do (
             )
         )
     )
+    if exist "%%d\target" (
+        set "found="
+        for /f "delims=" %%f in ('dir /b /o-d "%%d\target\*.jar" 2^>nul ^| findstr /v "shaded sources"') do (
+            if not defined found (
+                copy /Y "%%d\target\%%f" "minecraft\plugins\" >nul
+                echo   %%f
+                set "found=1"
+            )
+        )
+    )
 )
 
 if exist "plugins" (

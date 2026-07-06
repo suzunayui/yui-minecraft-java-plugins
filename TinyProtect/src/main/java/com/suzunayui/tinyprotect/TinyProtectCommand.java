@@ -21,7 +21,7 @@ public class TinyProtectCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!sender.hasPermission("tinyprotect.admin")) {
-            sender.sendMessage("§cYou don't have permission to use this command.");
+            sender.sendMessage("§cこのコマンドを使用する権限がありません。");
             return true;
         }
 
@@ -36,11 +36,12 @@ public class TinyProtectCommand implements CommandExecutor {
             case "pos", "p" -> handlePos(sender, args);
             case "near", "n" -> handleNear(sender, args);
             case "rollback", "rb" -> handleRollback(sender, args);
+            case "rollback-area", "rba" -> handleRollbackArea(sender, args);
             case "status" -> handleStatus(sender);
             case "purge" -> handlePurge(sender, args);
             case "help", "?" -> sendHelp(sender);
             default -> {
-                sender.sendMessage("§cUnknown subcommand. Use §e/tpi help §cfor help.");
+                sender.sendMessage("§c不明なサブコマンドです。§e/ti help §cでヘルプを表示。");
             }
         }
         return true;
@@ -48,21 +49,21 @@ public class TinyProtectCommand implements CommandExecutor {
 
     private void handleInspect(CommandSender sender) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage("§cThis command can only be used by players.");
+            sender.sendMessage("§cこのコマンドはプレイヤーのみ使用できます。");
             return;
         }
 
         plugin.toggleInspectMode(player.getUniqueId());
         if (plugin.isInspectMode(player.getUniqueId())) {
-            player.sendMessage("§aInspect mode enabled. §7Right-click a block to view its history.");
+            player.sendMessage("§a調査モードを有効にしました。§7ブロックを右クリックして履歴を表示。");
         } else {
-            player.sendMessage("§cInspect mode disabled.");
+            player.sendMessage("§c調査モードを無効にしました。");
         }
     }
 
     private void handleSearch(CommandSender sender, String[] args) {
         if (args.length < 2) {
-            sender.sendMessage("§cUsage: /tpi search <player> [limit]");
+            sender.sendMessage("§c使用法: /ti search <プレイヤー> [件数]");
             return;
         }
 
@@ -73,7 +74,7 @@ public class TinyProtectCommand implements CommandExecutor {
                 limit = Integer.parseInt(args[2]);
                 limit = Math.max(1, Math.min(100, limit));
             } catch (NumberFormatException e) {
-                sender.sendMessage("§cInvalid limit. Using default (10).");
+                sender.sendMessage("§c無効な件数です。デフォルト(10)を使用します。");
             }
         }
 
@@ -82,7 +83,7 @@ public class TinyProtectCommand implements CommandExecutor {
 
         sender.sendMessage("§6=== TinyProtect: Search '" + playerName + "' ===");
         if (entries.isEmpty()) {
-            sender.sendMessage("§7No logs found for player §e" + playerName + "§7.");
+            sender.sendMessage("§7プレイヤー §e" + playerName + " §7のログは見つかりませんでした。");
             return;
         }
 
@@ -93,12 +94,12 @@ public class TinyProtectCommand implements CommandExecutor {
             String coords = "§7(" + entry.x + ", " + entry.y + ", " + entry.z + ")";
             sender.sendMessage("§7[" + time + "] " + action + " §e" + entry.playerName + " " + coords + detail);
         }
-        sender.sendMessage("§7Found §e" + entries.size() + "§7 entries.");
+        sender.sendMessage("§e" + entries.size() + "§7件のログが見つかりました。");
     }
 
     private void handlePos(CommandSender sender, String[] args) {
         if (args.length < 4) {
-            sender.sendMessage("§cUsage: /tpi pos <x> <y> <z> [radius] [limit]");
+            sender.sendMessage("§c使用法: /ti pos <x> <y> <z> [半径] [件数]");
             return;
         }
 
@@ -108,7 +109,7 @@ public class TinyProtectCommand implements CommandExecutor {
             y = Integer.parseInt(args[2]);
             z = Integer.parseInt(args[3]);
         } catch (NumberFormatException e) {
-            sender.sendMessage("§cInvalid coordinates.");
+            sender.sendMessage("§c無効な座標です。");
             return;
         }
 
@@ -131,7 +132,7 @@ public class TinyProtectCommand implements CommandExecutor {
 
         sender.sendMessage("§6=== TinyProtect: Pos (" + x + ", " + y + ", " + z + ") r=" + radius + " ===");
         if (entries.isEmpty()) {
-            sender.sendMessage("§7No logs found at this location.");
+            sender.sendMessage("§7この座標のログは見つかりませんでした。");
             return;
         }
 
@@ -141,12 +142,12 @@ public class TinyProtectCommand implements CommandExecutor {
             String detail = buildDetail(entry);
             sender.sendMessage("§7[" + time + "] " + action + " §e" + entry.playerName + detail);
         }
-        sender.sendMessage("§7Found §e" + entries.size() + "§7 entries.");
+        sender.sendMessage("§e" + entries.size() + "§7件のログが見つかりました。");
     }
 
     private void handleNear(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage("§cThis command can only be used by players.");
+            sender.sendMessage("§cこのコマンドはプレイヤーのみ使用できます。");
             return;
         }
 
@@ -159,7 +160,8 @@ public class TinyProtectCommand implements CommandExecutor {
             String arg = args[i];
             if (arg.equalsIgnoreCase("break") || arg.equalsIgnoreCase("place") ||
                 arg.equalsIgnoreCase("container") || arg.equalsIgnoreCase("pickup") ||
-                arg.equalsIgnoreCase("drop") || arg.equalsIgnoreCase("death")) {
+                arg.equalsIgnoreCase("drop") || arg.equalsIgnoreCase("death") ||
+                arg.equalsIgnoreCase("kill")) {
                 actionFilter = switch (arg.toLowerCase()) {
                     case "break" -> "BLOCK_BREAK";
                     case "place" -> "BLOCK_PLACE";
@@ -167,6 +169,7 @@ public class TinyProtectCommand implements CommandExecutor {
                     case "pickup" -> "ITEM_PICKUP";
                     case "drop" -> "ITEM_DROP";
                     case "death" -> "PLAYER_DEATH";
+                    case "kill" -> "ENTITY_KILL";
                     default -> null;
                 };
             } else {
@@ -201,7 +204,7 @@ public class TinyProtectCommand implements CommandExecutor {
         sender.sendMessage(titleBuilder.toString());
 
         if (entries.isEmpty()) {
-            sender.sendMessage("§7No logs found nearby.");
+            sender.sendMessage("§7付近にログは見つかりませんでした。");
             return;
         }
 
@@ -213,12 +216,12 @@ public class TinyProtectCommand implements CommandExecutor {
             String coords = "§7(" + entry.x + ", " + entry.y + ", " + entry.z + ") §8[" + dist + "m]";
             sender.sendMessage("§7[" + time + "] " + action + " §e" + entry.playerName + " " + coords + detail);
         }
-        sender.sendMessage("§7Found §e" + entries.size() + "§7 entries. §8(Use /tpi near ... <limit> to see more)");
+        sender.sendMessage("§e" + entries.size() + "§7 entries. §8(Use /ti near ... <limit> to see more)");
     }
 
     private void handleRollback(CommandSender sender, String[] args) {
         if (args.length < 2) {
-            sender.sendMessage("§cUsage: /tpi rollback <player> [seconds]");
+            sender.sendMessage("§c使用法: /ti rollback <プレイヤー> [秒数]");
             return;
         }
 
@@ -228,7 +231,7 @@ public class TinyProtectCommand implements CommandExecutor {
             try {
                 seconds = Integer.parseInt(args[2]);
             } catch (NumberFormatException e) {
-                sender.sendMessage("§cInvalid seconds value.");
+                sender.sendMessage("§c無効な秒数です。");
                 return;
             }
         }
@@ -241,7 +244,47 @@ public class TinyProtectCommand implements CommandExecutor {
         long sinceTimestamp = System.currentTimeMillis() - ((long) seconds * 1000);
         int count = plugin.getDatabaseManager().rollbackPlayer(playerName, world, sinceTimestamp);
 
-        sender.sendMessage("§aRolled back §e" + count + "§a block changes by §e" + playerName + "§a in the last §e" + seconds + "§a seconds.");
+        sender.sendMessage("§e" + playerName + "§aの §e" + count + "§a件のブロック変更を §e" + seconds + "§a秒前からロールバックしました。");
+    }
+
+    private void handleRollbackArea(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage("§cこのコマンドはプレイヤーのみ使用できます。");
+            return;
+        }
+
+        int radius = 10;
+        int seconds = 3600;
+
+        if (args.length >= 2) {
+            try {
+                radius = Integer.parseInt(args[1]);
+                radius = Math.max(1, Math.min(100, radius));
+            } catch (NumberFormatException e) {
+                sender.sendMessage("§c無効な半径です。");
+                return;
+            }
+        }
+
+        if (args.length >= 3) {
+            try {
+                seconds = Integer.parseInt(args[2]);
+            } catch (NumberFormatException e) {
+                sender.sendMessage("§c無効な秒数です。");
+                return;
+            }
+        }
+
+        Location loc = player.getLocation();
+        String world = loc.getWorld().getName();
+        int x = loc.getBlockX();
+        int y = loc.getBlockY();
+        int z = loc.getBlockZ();
+
+        long sinceTimestamp = System.currentTimeMillis() - ((long) seconds * 1000);
+        int count = plugin.getDatabaseManager().rollbackArea(world, x, y, z, radius, sinceTimestamp);
+
+        sender.sendMessage("§e" + radius + "§aブロック以内の §e" + count + "§aブロックを §e" + seconds + "§a秒前からロールバックしました。");
     }
 
     private void handleStatus(CommandSender sender) {
@@ -254,12 +297,12 @@ public class TinyProtectCommand implements CommandExecutor {
             sender.sendMessage("§e" + entry.getKey() + ": §f" + entry.getValue());
             total += entry.getValue();
         }
-        sender.sendMessage("§eTotal logs: §f" + total);
+        sender.sendMessage("§e合計ログ数: §f" + total);
     }
 
     private void handlePurge(CommandSender sender, String[] args) {
         if (args.length < 2) {
-            sender.sendMessage("§cUsage: /tpi purge <days>");
+            sender.sendMessage("§c使用法: /ti purge <日数>");
             return;
         }
 
@@ -267,23 +310,24 @@ public class TinyProtectCommand implements CommandExecutor {
         try {
             days = Integer.parseInt(args[1]);
         } catch (NumberFormatException e) {
-            sender.sendMessage("§cInvalid days value.");
+            sender.sendMessage("§c無効な日数です。");
             return;
         }
 
         int count = plugin.getDatabaseManager().purgeOldLogs(days);
-        sender.sendMessage("§aPurged §e" + count + "§a log entries older than §e" + days + "§a days.");
+        sender.sendMessage("§e" + days + "§a日以上経過したログを §e" + count + "§a件削除しました。");
     }
 
     private void sendHelp(CommandSender sender) {
-        sender.sendMessage("§6=== TinyProtect Help ===");
-        sender.sendMessage("§e/tpi inspect §7- Toggle inspect mode (right-click blocks)");
-        sender.sendMessage("§e/tpi search <player> [limit] §7- Search logs by player");
-        sender.sendMessage("§e/tpi pos <x> <y> <z> [radius] [limit] §7- Search logs by location");
-        sender.sendMessage("§e/tpi near [radius] [block] [break|place|container|pickup|drop|death] [limit] §7- Search nearby logs");
-        sender.sendMessage("§e/tpi rollback <player> [seconds] §7- Rollback player's block changes");
-        sender.sendMessage("§e/tpi status §7- Show database statistics");
-        sender.sendMessage("§e/tpi purge <days> §7- Delete logs older than specified days");
+        sender.sendMessage("§6=== TinyProtect ヘルプ ===");
+        sender.sendMessage("§e/ti inspect §7- 調査モードの切り替え（ブロックを右クリック）");
+        sender.sendMessage("§e/ti search <プレイヤー> [件数] §7- プレイヤーでログを検索");
+        sender.sendMessage("§e/ti pos <x> <y> <z> [半径] [件数] §7- 座標でログを検索");
+        sender.sendMessage("§e/ti near [半径] [ブロック] [break|place|container|pickup|drop|death|kill] [件数] §7- 付近のログを検索");
+        sender.sendMessage("§e/ti rollback <プレイヤー> [秒数] §7- プレイヤーのブロック変更をロールバック");
+        sender.sendMessage("§e/ti rollback-area [半径] [秒数] §7- 周囲のエリアをロールバック（爆発、火、液体）");
+        sender.sendMessage("§e/ti status §7- データベース統計を表示");
+        sender.sendMessage("§e/ti purge <日数> §7- 指定日数より古いログを削除");
     }
 
     private String formatAction(String actionType) {
@@ -295,6 +339,10 @@ public class TinyProtectCommand implements CommandExecutor {
             case "ITEM_PICKUP" -> "§e[Pickup]";
             case "ITEM_DROP" -> "§7[Drop]";
             case "PLAYER_DEATH" -> "§4[Death]";
+            case "ENTITY_KILL" -> "§4[Kill]";
+            case "EXPLOSION" -> "§4[Exploded]";
+            case "BLOCK_BURN" -> "§4[Burned]";
+            case "LIQUID_DESTROY" -> "§4[Liquid]";
             default -> "§8[" + actionType + "]";
         };
     }

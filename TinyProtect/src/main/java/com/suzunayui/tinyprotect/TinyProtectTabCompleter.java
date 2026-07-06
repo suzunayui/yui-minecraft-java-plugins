@@ -9,7 +9,7 @@ import java.util.List;
 
 public class TinyProtectTabCompleter implements TabCompleter {
 
-    private static final List<String> SUBCOMMANDS = List.of("inspect", "search", "pos", "near", "rollback", "status", "purge", "help");
+    private static final List<String> SUBCOMMANDS = List.of("inspect", "search", "pos", "near", "rollback", "rollback-area", "status", "purge", "help");
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
