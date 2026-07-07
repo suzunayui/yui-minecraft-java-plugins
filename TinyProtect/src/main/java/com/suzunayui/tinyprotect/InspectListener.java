@@ -84,6 +84,7 @@ public class InspectListener implements Listener {
             case "EXPLOSION" -> "§4[Exploded]";
             case "BLOCK_BURN" -> "§4[Burned]";
             case "LIQUID_DESTROY" -> "§4[Liquid]";
+            case "BLOCK_FALL" -> "§e[Fell]";
             default -> "§8[" + actionType + "]";
         };
     }

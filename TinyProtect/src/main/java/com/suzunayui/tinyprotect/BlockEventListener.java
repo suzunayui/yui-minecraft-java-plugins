@@ -1,5 +1,6 @@
 package com.suzunayui.tinyprotect;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -10,9 +11,13 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
 import org.bukkit.event.entity.EntityExplodeEvent;
 
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
 public class BlockEventListener implements Listener {
 
     private final TinyProtect plugin;
+    private final Set<String> pendingFallChecks = ConcurrentHashMap.newKeySet();
 
     public BlockEventListener(TinyProtect plugin) {
         this.plugin = plugin;
@@ -110,5 +115,36 @@ public class BlockEventListener implements Listener {
                 plugin.getDatabaseManager().logLiquidDestroy(loc, toType, fromType);
             }
         }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onBlockPhysics(BlockPhysicsEvent event) {
+        Block block = event.getBlock();
+        if (!isGravityAffected(block.getType())) return;
+
+        Location loc = block.getLocation();
+        String key = loc.getWorld().getName() + ":" + loc.getBlockX() + ":" + loc.getBlockY() + ":" + loc.getBlockZ();
+        if (!pendingFallChecks.add(key)) return;
+
+        Material type = block.getType();
+        Block below = loc.clone().subtract(0, 1, 0).getBlock();
+
+        if (below.getType().isAir() || !below.getType().isSolid()) {
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                pendingFallChecks.remove(key);
+                if (loc.getBlock().getType() != type) {
+                    plugin.getDatabaseManager().logBlockFall(loc, type);
+                }
+            }, 1L);
+        } else {
+            pendingFallChecks.remove(key);
+        }
+    }
+
+    private boolean isGravityAffected(Material material) {
+        return switch (material) {
+            case SAND, RED_SAND, GRAVEL, ANVIL, CHIPPED_ANVIL, DAMAGED_ANVIL -> true;
+            default -> material.name().endsWith("_CONCRETE_POWDER");
+        };
     }
 }

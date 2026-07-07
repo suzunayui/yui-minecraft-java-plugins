@@ -4,6 +4,9 @@ import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -17,14 +20,17 @@ import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-public class SimpleBackup extends JavaPlugin {
+public class SimpleBackup extends JavaPlugin implements Listener {
     
     private static SimpleBackup instance;
     private BukkitRunnable backupTask;
     private File backupDir;
+    private AtomicLong lastBackupTime = new AtomicLong(0);
+    private static final long BACKUP_INTERVAL_MS = 60 * 60 * 1000L;
     
     @Override
     public void onEnable() {
@@ -34,6 +40,8 @@ public class SimpleBackup extends JavaPlugin {
         if (!backupDir.exists()) {
             backupDir.mkdirs();
         }
+        
+        getServer().getPluginManager().registerEvents(this, this);
         
         getLogger().info("Starting backup...");
         Bukkit.getScheduler().runTaskAsynchronously(this, () -> createBackup());
@@ -49,6 +57,16 @@ public class SimpleBackup extends JavaPlugin {
             backupTask.cancel();
         }
         getLogger().info("SimpleBackup has been disabled!");
+    }
+    
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        long now = System.currentTimeMillis();
+        long last = lastBackupTime.get();
+        if (now - last >= BACKUP_INTERVAL_MS) {
+            getLogger().info("Player joined. Creating backup...");
+            Bukkit.getScheduler().runTaskAsynchronously(this, this::createBackup);
+        }
     }
     
     private void startScheduledBackup() {
@@ -72,9 +90,22 @@ public class SimpleBackup extends JavaPlugin {
         File zipFile = new File(backupDir, timestamp + ".zip");
         
         try {
+            // Paper 1.21: world/ メインフォルダをバックアップ（level.dat、players/など）
+            File worldMainFolder = new File("world");
+            if (worldMainFolder.exists()) {
+                Path targetPath = backupFolder.toPath().resolve("world");
+                copyFolder(worldMainFolder.toPath(), targetPath);
+            }
+            
+            // 従来のワールドフォルダもバックアップ
             for (World world : Bukkit.getWorlds()) {
                 File worldFolder = world.getWorldFolder();
-                Path targetPath = backupFolder.toPath().resolve(worldFolder.getName());
+                String folderName = worldFolder.getName();
+                // world/dimensions/minecraft/overworld などはスキップ（world/で既にバックアップ済み）
+                if (worldFolder.getAbsolutePath().contains("dimensions")) {
+                    continue;
+                }
+                Path targetPath = backupFolder.toPath().resolve(folderName);
                 copyFolder(worldFolder.toPath(), targetPath);
             }
             
@@ -87,6 +118,7 @@ public class SimpleBackup extends JavaPlugin {
             }
             
             getLogger().info("Backup created: " + zipFile.getName());
+            lastBackupTime.set(System.currentTimeMillis());
         } catch (IOException e) {
             getLogger().severe("Failed to create backup: " + e.getMessage());
             e.printStackTrace();

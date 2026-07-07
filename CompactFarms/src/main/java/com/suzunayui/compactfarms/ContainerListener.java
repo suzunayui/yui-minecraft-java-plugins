@@ -11,8 +11,11 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.NamespacedKey;
 import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 
 import java.util.UUID;
 
@@ -27,27 +30,26 @@ public class ContainerListener implements Listener {
     @EventHandler
     public void onBlockPlace(BlockPlaceEvent event) {
         Block block = event.getBlock();
-        if (block.getState() instanceof Container container) {
-            if (isCompactFarms(container)) {
-                var player = event.getPlayer();
-                UUID owner = player.getUniqueId();
-                
-                int maxPerType = plugin.getConfig().getInt("global.max-per-type", 1);
-                int currentCount = ResourceGenerator.getInstance().getContainerCountOfType(owner, container.getType());
-                if (currentCount >= maxPerType) {
-                    String resourceName = getResourceName(container);
-                    player.sendMessage("§c" + resourceName + "CompactFarmsは1人" + maxPerType + "個までです。");
-                    event.setCancelled(true);
-                    return;
-                }
-                
-                saveOwner(container, owner);
-                Location loc = new Location(block.getWorld(), block.getX(), block.getY(), block.getZ());
-                ResourceGenerator.getInstance().registerContainer(owner, loc);
-                String resourceName = getResourceName(container);
-                player.sendMessage("§a" + resourceName + "CompactFarmsを登録しました！自動的に資源が生成されます。");
-            }
+        if (!(block.getState() instanceof Container container)) return;
+        if (!isCompactFarmsItem(event.getItemInHand()) && !isCompactFarms(container)) return;
+
+        var player = event.getPlayer();
+        UUID owner = player.getUniqueId();
+        
+        int maxPerType = plugin.getConfig().getInt("global.max-per-type", 1);
+        int currentCount = ResourceGenerator.getInstance().getContainerCountOfType(owner, container.getType());
+        if (currentCount >= maxPerType) {
+            String resourceName = getResourceName(container);
+            player.sendMessage("§c" + resourceName + "CompactFarmsは1人" + maxPerType + "個までです。");
+            event.setCancelled(true);
+            return;
         }
+        
+        saveOwner(container, owner);
+        Location loc = new Location(block.getWorld(), block.getX(), block.getY(), block.getZ());
+        ResourceGenerator.getInstance().registerContainer(owner, loc);
+        String resourceName = getResourceName(container);
+        player.sendMessage("§a" + resourceName + "CompactFarmsを登録しました！自動的に資源が生成されます。");
     }
     
     @EventHandler
@@ -108,8 +110,10 @@ public class ContainerListener implements Listener {
     public void saveOwner(Container container, UUID owner) {
         if (container instanceof TileState tileState) {
             PersistentDataContainer pdc = tileState.getPersistentDataContainer();
-            NamespacedKey key = new NamespacedKey(plugin, "owner");
-            pdc.set(key, org.bukkit.persistence.PersistentDataType.STRING, owner.toString());
+            NamespacedKey ownerKey = new NamespacedKey(plugin, "owner");
+            NamespacedKey cfKey = new NamespacedKey(plugin, "compactfarms");
+            pdc.set(ownerKey, PersistentDataType.STRING, owner.toString());
+            pdc.set(cfKey, PersistentDataType.BOOLEAN, true);
             tileState.update();
         }
     }
@@ -118,8 +122,8 @@ public class ContainerListener implements Listener {
         if (container instanceof TileState tileState) {
             PersistentDataContainer pdc = tileState.getPersistentDataContainer();
             NamespacedKey key = new NamespacedKey(plugin, "owner");
-            if (pdc.has(key, org.bukkit.persistence.PersistentDataType.STRING)) {
-                String ownerStr = pdc.get(key, org.bukkit.persistence.PersistentDataType.STRING);
+            if (pdc.has(key, PersistentDataType.STRING)) {
+                String ownerStr = pdc.get(key, PersistentDataType.STRING);
                 if (ownerStr != null) {
                     return UUID.fromString(ownerStr);
                 }
@@ -131,15 +135,29 @@ public class ContainerListener implements Listener {
     public void clearOwner(Container container) {
         if (container instanceof TileState tileState) {
             PersistentDataContainer pdc = tileState.getPersistentDataContainer();
-            NamespacedKey key = new NamespacedKey(plugin, "owner");
-            pdc.remove(key);
+            NamespacedKey ownerKey = new NamespacedKey(plugin, "owner");
+            NamespacedKey cfKey = new NamespacedKey(plugin, "compactfarms");
+            pdc.remove(ownerKey);
+            pdc.remove(cfKey);
             tileState.update();
         }
     }
     
     private boolean isCompactFarms(Container container) {
-        Material type = container.getType();
-        return type == Material.WHITE_SHULKER_BOX || type == Material.GREEN_SHULKER_BOX || type == Material.GRAY_SHULKER_BOX;
+        if (!(container instanceof TileState tileState)) return false;
+        PersistentDataContainer pdc = tileState.getPersistentDataContainer();
+        NamespacedKey cfKey = new NamespacedKey(plugin, "compactfarms");
+        NamespacedKey ownerKey = new NamespacedKey(plugin, "owner");
+        return pdc.has(cfKey, PersistentDataType.BOOLEAN)
+            || pdc.has(ownerKey, PersistentDataType.STRING);
+    }
+
+    private boolean isCompactFarmsItem(ItemStack item) {
+        if (item == null || !item.hasItemMeta()) return false;
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return false;
+        NamespacedKey key = new NamespacedKey(plugin, "compactfarms");
+        return meta.getPersistentDataContainer().has(key, PersistentDataType.BOOLEAN);
     }
     
     private String getResourceName(Container container) {

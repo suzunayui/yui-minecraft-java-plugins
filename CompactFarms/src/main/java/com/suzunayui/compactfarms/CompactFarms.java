@@ -13,6 +13,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 
+import org.bukkit.persistence.PersistentDataType;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -67,9 +69,13 @@ public class CompactFarms extends JavaPlugin {
         getLogger().info("Scanned and registered " + count + " existing CompactFarms containers.");
     }
     
-    private boolean isCompactFarms(Container container) {
-        Material type = container.getType();
-        return type == Material.WHITE_SHULKER_BOX || type == Material.GREEN_SHULKER_BOX || type == Material.GRAY_SHULKER_BOX;
+    boolean isCompactFarms(org.bukkit.block.Container container) {
+        if (!(container instanceof org.bukkit.block.TileState tileState)) return false;
+        org.bukkit.persistence.PersistentDataContainer pdc = tileState.getPersistentDataContainer();
+        NamespacedKey cfKey = new NamespacedKey(this, "compactfarms");
+        NamespacedKey ownerKey = new NamespacedKey(this, "owner");
+        return pdc.has(cfKey, PersistentDataType.BOOLEAN)
+            || pdc.has(ownerKey, PersistentDataType.STRING);
     }
     
     private void registerRecipes() {
@@ -120,6 +126,8 @@ public class CompactFarms extends JavaPlugin {
                     Component.text("1分ごとに1個").color(NamedTextColor.YELLOW)
                 ));
             }
+            NamespacedKey cfKey = new NamespacedKey(this, "compactfarms");
+            meta.getPersistentDataContainer().set(cfKey, PersistentDataType.BOOLEAN, true);
             item.setItemMeta(meta);
         }
         return item;

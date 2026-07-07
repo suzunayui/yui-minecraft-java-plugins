@@ -118,6 +118,10 @@ public class DatabaseManager {
         return logAction(UUID.fromString("00000000-0000-0000-0000-000000000000"), "ENVIRONMENT", "LIQUID_DESTROY", loc, blockType.name(), liquidType.name(), 0, null);
     }
 
+    public CompletableFuture<Void> logBlockFall(Location loc, Material blockType) {
+        return logAction(UUID.fromString("00000000-0000-0000-0000-000000000000"), "GRAVITY", "BLOCK_FALL", loc, blockType.name(), null, 0, null);
+    }
+
     private CompletableFuture<Void> logAction(UUID playerUuid, String playerName, String actionType,
                                                Location loc, String blockType, String itemType, int amount, String extraData) {
         return CompletableFuture.runAsync(() -> {
@@ -336,7 +340,7 @@ public class DatabaseManager {
                         if ("BLOCK_PLACE".equals(entry.actionType)) {
                             loc.getBlock().setType(Material.AIR);
                             count++;
-                        } else if ("BLOCK_BREAK".equals(entry.actionType) && entry.blockType != null) {
+                        } else if (("BLOCK_BREAK".equals(entry.actionType) || "BLOCK_FALL".equals(entry.actionType)) && entry.blockType != null) {
                             try {
                                 Material mat = Material.valueOf(entry.blockType);
                                 if (SKIP_MATERIALS.contains(mat)) continue;
@@ -363,7 +367,7 @@ public class DatabaseManager {
                 AND y BETWEEN ? AND ? 
                 AND z BETWEEN ? AND ?
                 AND timestamp >= ?
-                AND action_type IN ('BLOCK_PLACE', 'BLOCK_BREAK', 'BLOCK_BURN', 'EXPLOSION', 'LIQUID_DESTROY')
+                AND action_type IN ('BLOCK_PLACE', 'BLOCK_BREAK', 'BLOCK_BURN', 'EXPLOSION', 'LIQUID_DESTROY', 'BLOCK_FALL')
                 ORDER BY timestamp ASC
             """;
             try (PreparedStatement ps = connection.prepareStatement(sql)) {

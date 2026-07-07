@@ -18,6 +18,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
+import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.player.PlayerFishEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.entity.EntityTargetEvent;
@@ -133,6 +134,9 @@ public class HitNotice extends JavaPlugin implements Listener {
     // 落下ブロックの追跡用マップ（座標 -> 設置者UUID）
     private static final Map<String, UUID> fallingBlockOwners = new HashMap<>();
     
+    // FallingBlockエンティティの追跡用マップ（エンティティID -> 設置者UUID）
+    private static final Map<Integer, UUID> fallingBlockEntityOwners = new HashMap<>();
+    
     // スイートベリーの追跡用マップ（座標 -> 設置者UUID）
     private static final Map<String, UUID> sweetBerryOwners = new HashMap<>();
     
@@ -185,6 +189,19 @@ public class HitNotice extends JavaPlugin implements Listener {
         if (type == Material.SWEET_BERRY_BUSH) {
             String key = locationToKey(block.getLocation());
             sweetBerryOwners.put(key, event.getPlayer().getUniqueId());
+        }
+    }
+
+    @EventHandler
+    public void onEntitySpawn(EntitySpawnEvent event) {
+        // FallingBlockがスポーンした時、元の位置から設置者を取得して紐付け
+        if (event.getEntity() instanceof FallingBlock fallingBlock) {
+            Location loc = fallingBlock.getLocation();
+            String key = locationToKey(loc);
+            UUID ownerUuid = fallingBlockOwners.get(key);
+            if (ownerUuid != null) {
+                fallingBlockEntityOwners.put(fallingBlock.getEntityId(), ownerUuid);
+            }
         }
     }
 
@@ -323,10 +340,8 @@ public class HitNotice extends JavaPlugin implements Listener {
             Material blockType = fallingBlock.getBlockData().getMaterial();
             String blockName = getFallingBlockName(blockType);
             
-            // 落下元の座標（ブロックが落下を開始した位置の下のブロック）を推測
-            Location fallLocation = fallingBlock.getLocation();
-            String key = locationToKey(fallLocation);
-            UUID ownerUuid = fallingBlockOwners.get(key);
+            // エンティティIDから設置者を取得
+            UUID ownerUuid = fallingBlockEntityOwners.get(fallingBlock.getEntityId());
             
             if (ownerUuid != null) {
                 Player owner = Bukkit.getPlayer(ownerUuid);
@@ -337,7 +352,7 @@ public class HitNotice extends JavaPlugin implements Listener {
                         onlinePlayer.sendMessage(message);
                     }
                     // 使用済みのエントリを削除
-                    fallingBlockOwners.remove(key);
+                    fallingBlockEntityOwners.remove(fallingBlock.getEntityId());
                     return;
                 }
             }
