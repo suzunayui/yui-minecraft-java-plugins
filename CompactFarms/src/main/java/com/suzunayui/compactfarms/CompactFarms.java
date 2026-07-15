@@ -100,6 +100,13 @@ public class CompactFarms extends JavaPlugin {
         gunpowderRecipe.setIngredient('C', Material.CHEST);
         Bukkit.addRecipe(gunpowderRecipe);
         
+        NamespacedKey expKey = new NamespacedKey(this, "experience_compactfarms");
+        ShapedRecipe expRecipe = new ShapedRecipe(expKey, createCompactFarmsItem(Material.LIME_SHULKER_BOX, "experience"));
+        expRecipe.shape("XXX", "XCX", "XXX");
+        expRecipe.setIngredient('X', Material.EXPERIENCE_BOTTLE);
+        expRecipe.setIngredient('C', Material.CHEST);
+        Bukkit.addRecipe(expRecipe);
+        
         getLogger().info("Registered CompactFarms recipes");
     }
     
@@ -123,6 +130,12 @@ public class CompactFarms extends JavaPlugin {
                 meta.displayName(Component.text("火薬CompactFarms").color(NamedTextColor.BLACK));
                 meta.lore(List.of(
                     Component.text("自動的に火薬を生成します").color(NamedTextColor.GRAY),
+                    Component.text("1分ごとに1個").color(NamedTextColor.YELLOW)
+                ));
+            } else if (type.equals("experience")) {
+                meta.displayName(Component.text("経験値CompactFarms").color(NamedTextColor.BLACK));
+                meta.lore(List.of(
+                    Component.text("自動的に経験値瓶を生成します").color(NamedTextColor.GRAY),
                     Component.text("1分ごとに1個").color(NamedTextColor.YELLOW)
                 ));
             }

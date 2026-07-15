@@ -12,6 +12,9 @@ resources:
   GUNPOWDER:
     amount: 1
     interval-seconds: 60
+  EXPERIENCE_BOTTLE:
+    amount: 1
+    interval-seconds: 60
 
 # グローバル設定
 global:

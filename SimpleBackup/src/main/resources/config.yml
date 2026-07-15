@@ -2,3 +2,7 @@
 # true: zip圧縮後にフォルダを削除（推奨）
 # false: フォルダとzipの両方を保持
 delete-after-compress: true
+
+# 各日で最初のバックアップは無期限に保持します。
+# それ以外の時間ごとのバックアップを何時間残すか指定します。
+hourly-retention-hours: 12

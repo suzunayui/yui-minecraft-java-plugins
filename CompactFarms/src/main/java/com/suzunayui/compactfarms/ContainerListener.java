@@ -168,6 +168,8 @@ public class ContainerListener implements Listener {
             return "エメラルド";
         } else if (type == Material.GRAY_SHULKER_BOX) {
             return "火薬";
+        } else if (type == Material.LIME_SHULKER_BOX) {
+            return "経験値";
         }
         return "";
     }

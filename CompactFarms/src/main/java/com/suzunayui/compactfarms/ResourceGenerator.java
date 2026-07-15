@@ -88,6 +88,8 @@ public class ResourceGenerator {
             return Material.EMERALD;
         } else if (containerType == Material.GRAY_SHULKER_BOX) {
             return Material.GUNPOWDER;
+        } else if (containerType == Material.LIME_SHULKER_BOX) {
+            return Material.EXPERIENCE_BOTTLE;
         }
         
         return null;

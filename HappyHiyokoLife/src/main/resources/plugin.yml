@@ -1,0 +1,11 @@
+name: HappyHiyokoLife
+version: '1.0.0'
+main: com.suzunayui.happyhiyokolife.HappyHiyokoLife
+api-version: '1.21'
+author: Yui
+description: 大きいひよこと遊ぶプラグイン
+
+commands:
+  hiyoko:
+    description: 大きいひよこを召喚します
+    usage: /hiyoko

@@ -42,10 +42,12 @@ public class CompactFarmsCommand implements CommandExecutor {
                 int ironCount = ResourceGenerator.getInstance().getContainerCountOfType(player.getUniqueId(), org.bukkit.Material.WHITE_SHULKER_BOX);
                 int emeraldCount = ResourceGenerator.getInstance().getContainerCountOfType(player.getUniqueId(), org.bukkit.Material.GREEN_SHULKER_BOX);
                 int gunpowderCount = ResourceGenerator.getInstance().getContainerCountOfType(player.getUniqueId(), org.bukkit.Material.GRAY_SHULKER_BOX);
+                int expCount = ResourceGenerator.getInstance().getContainerCountOfType(player.getUniqueId(), org.bukkit.Material.LIME_SHULKER_BOX);
                 player.sendMessage("§6=== CompactFarms 情報 ===");
                 player.sendMessage("§a鉄CompactFarms: " + ironCount + "/" + maxPerType);
                 player.sendMessage("§aエメラルドCompactFarms: " + emeraldCount + "/" + maxPerType);
                 player.sendMessage("§a火薬CompactFarms: " + gunpowderCount + "/" + maxPerType);
+                player.sendMessage("§a経験値CompactFarms: " + expCount + "/" + maxPerType);
                 break;
             default:
                 player.sendMessage("§c不明なコマンドです。");
